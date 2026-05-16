@@ -1,42 +1,76 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import { IMAGE_ACCEPT } from "@/lib/imageUpload"
 import { cn } from "@/lib/utils"
 
-const FORMATS = ["JPG", "PNG", "WEBP", "AVIF", "MP4", "MOV"]
+const FORMATS = ["JPG", "PNG", "WEBP", "AVIF", "GIF", "BMP"]
 
-export function DropZone({ onLoad }) {
+function pickImageFile(fileList) {
+  if (!fileList?.length) return null
+  return (
+    Array.from(fileList).find(
+      (f) => f.type.startsWith("image/") || /\.(jpe?g|png|webp|avif|gif|bmp|tiff?|svg)$/i.test(f.name)
+    ) ?? null
+  )
+}
+
+export function DropZone({ onFile, error }) {
   const [dragover, setDragover] = useState(false)
+  const inputRef = useRef(null)
+
+  const handleFiles = (fileList) => {
+    const file = pickImageFile(fileList)
+    if (file) onFile(file)
+  }
 
   return (
-    <div
-      className={cn("drop-card", dragover && "dragover")}
-      onDragOver={(e) => {
-        e.preventDefault()
-        setDragover(true)
-      }}
-      onDragLeave={() => setDragover(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setDragover(false)
-        onLoad()
-      }}
-      onClick={onLoad}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && onLoad()}
-    >
-      <div className="drop-icon">
-        <i className="ti ti-cloud-upload" />
+    <div className="drop-zone-wrap">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={IMAGE_ACCEPT}
+        className="sr-only"
+        onChange={(e) => {
+          handleFiles(e.target.files)
+          e.target.value = ""
+        }}
+      />
+      <div
+        className={cn("drop-card", dragover && "dragover", error && "drop-card-error")}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setDragover(true)
+        }}
+        onDragLeave={() => setDragover(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setDragover(false)
+          handleFiles(e.dataTransfer.files)
+        }}
+        onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            inputRef.current?.click()
+          }
+        }}
+      >
+        <div className="drop-icon">
+          <i className="ti ti-cloud-upload" />
+        </div>
+        <div className="drop-title">Drop your image here</div>
+        <div className="drop-sub">or click to browse</div>
+        <div className="format-pills">
+          {FORMATS.map((f) => (
+            <Badge key={f} variant="secondary" className="format-pill font-mono text-[10px] font-normal">
+              {f}
+            </Badge>
+          ))}
+        </div>
       </div>
-      <div className="drop-title">Drop your file here</div>
-      <div className="drop-sub">or click to browse</div>
-      <div className="format-pills">
-        {FORMATS.map((f) => (
-          <Badge key={f} variant="secondary" className="format-pill font-mono text-[10px] font-normal">
-            {f}
-          </Badge>
-        ))}
-      </div>
+      {error ? <p className="drop-error">{error}</p> : null}
     </div>
   )
 }

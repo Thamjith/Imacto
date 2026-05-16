@@ -6,13 +6,13 @@ import { Sidebar } from "@/components/layout/Sidebar"
 import { StageBar } from "@/components/layout/StageBar"
 import { TopBar } from "@/components/layout/TopBar"
 import { IMAGE_TOOL_IDS } from "@/constants/tools"
-import { useStudioState } from "@/hooks/useStudioState"
+import { useStudio } from "@/context/StudioContext"
 import "@/App.css"
 
 export function StudioPage() {
   const { toolId } = useParams()
   const navigate = useNavigate()
-  const studio = useStudioState()
+  const studio = useStudio()
 
   const tool = IMAGE_TOOL_IDS.includes(toolId) ? toolId : null
 
@@ -32,18 +32,21 @@ export function StudioPage() {
         <div className="center">
           <StageBar
             step={studio.step}
-            filename={studio.loaded ? "hero-photo.jpg" : null}
-            size={studio.loaded ? "2.4 MB" : null}
+            filename={studio.image?.name ?? null}
+            size={studio.image?.sizeLabel ?? null}
           />
           <Canvas
             loaded={studio.loaded}
-            onLoad={studio.handleLoad}
+            image={studio.image}
+            onFile={studio.uploadFile}
+            uploadError={studio.uploadError}
             zoom={studio.zoom}
             setZoom={studio.setZoom}
             rotation={studio.toolState.rotate.rotation}
             flipH={studio.toolState.rotate.flipH}
             flipV={studio.toolState.rotate.flipV}
             undo={studio.handleUnload}
+            showCropOverlay={tool === "crop"}
           />
           {studio.toast && (
             <div className="toast">
@@ -57,6 +60,7 @@ export function StudioPage() {
           toolState={studio.toolState}
           setToolState={studio.setToolState}
           onExport={handleExport}
+          disabled={!studio.loaded}
         />
       </div>
     </div>

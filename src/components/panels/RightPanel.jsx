@@ -16,7 +16,7 @@ const PANELS = {
   watermark: WatermarkPanel,
 }
 
-export function RightPanel({ tool, toolState, setToolState, onExport }) {
+export function RightPanel({ tool, toolState, setToolState, onExport, disabled }) {
   const meta = TOOL_META[tool]
   const Panel = PANELS[tool]
   const update = (key) => (patch) => setToolState((s) => ({ ...s, [key]: { ...s[key], ...patch } }))
@@ -32,7 +32,7 @@ export function RightPanel({ tool, toolState, setToolState, onExport }) {
       </div>
       <div className="rp-body">{Panel && <Panel state={toolState[tool]} set={update(tool)} />}</div>
       <div className="rp-footer">
-        <Button className="btn-primary w-full" onClick={onExport}>
+        <Button className="btn-primary w-full" onClick={onExport} disabled={disabled}>
           <i className="ti ti-download" />
           Export file
         </Button>
