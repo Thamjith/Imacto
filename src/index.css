@@ -1,0 +1,42 @@
+:root {
+  --color-background-primary: #0f0f10;
+  --color-background-secondary: #161618;
+  --color-background-tertiary: #1c1c1f;
+  --color-background-hover: #232327;
+
+  --color-text-primary: #e8e8ea;
+  --color-text-secondary: #a3a3a8;
+  --color-text-tertiary: #6b6b72;
+
+  --color-border-tertiary: rgba(255,255,255,0.08);
+  --color-border-secondary: rgba(255,255,255,0.14);
+  --color-border-primary: rgba(255,255,255,0.32);
+
+  --color-accent: #c4f56b;
+  --color-success: #6bc06b;
+  --color-warn-bg: rgba(217, 158, 50, 0.14);
+  --color-warn-fg: #e0a85a;
+  --color-warn-border: rgba(217, 158, 50, 0.32);
+
+  --border-radius-sm: 5px;
+  --border-radius-md: 7px;
+  --border-radius-lg: 10px;
+
+  --font-ui: "Inter", -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  background: #08080a;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
+}
+button { font-family: var(--font-ui); }
+input, select { font-family: var(--font-ui); }
