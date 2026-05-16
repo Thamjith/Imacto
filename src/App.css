@@ -1,18 +1,17 @@
 /* App shell */
 .stage {
   min-height: 100vh;
-  padding: 28px;
+  width: 100%;
   display: flex;
-  align-items: stretch;
-  justify-content: center;
+  flex-direction: column;
 }
 .app {
   flex: 1;
-  max-width: 1440px;
-  min-height: calc(100vh - 56px);
+  width: 100%;
+  min-height: 100vh;
   background: var(--color-background-primary);
   border: 0.5px solid var(--color-border-tertiary);
-  border-radius: var(--border-radius-lg);
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -39,7 +38,7 @@
   width: 22px;
   height: 22px;
   border-radius: var(--border-radius-sm);
-  background: var(--color-accent);
+  background: var(--color-accent-legacy, var(--accent));
   color: #0b0b0c;
   display: grid;
   place-items: center;
@@ -397,7 +396,8 @@
   display: inline-flex; align-items: center;
 }
 .chip:hover { background: var(--color-background-hover); }
-.chip.active {
+.chip.active,
+.chip-active {
   background: var(--color-background-primary);
   border-color: var(--color-border-primary);
   color: var(--color-text-primary);
