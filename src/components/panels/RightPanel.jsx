@@ -16,10 +16,20 @@ const PANELS = {
   watermark: WatermarkPanel,
 }
 
-export function RightPanel({ tool, toolState, setToolState, onExport, disabled }) {
+export function RightPanel({ tool, toolState, setToolState, onExport, disabled, exporting, image }) {
   const meta = TOOL_META[tool]
   const Panel = PANELS[tool]
   const update = (key) => (patch) => setToolState((s) => ({ ...s, [key]: { ...s[key], ...patch } }))
+
+  const panelProps =
+    tool === "crop"
+      ? {
+          state: toolState.crop,
+          set: update("crop"),
+          imageWidth: image?.width,
+          imageHeight: image?.height,
+        }
+      : { state: toolState[tool], set: update(tool) }
 
   return (
     <aside className="rightpanel">
@@ -30,11 +40,11 @@ export function RightPanel({ tool, toolState, setToolState, onExport, disabled }
         </div>
         <div className="rp-subtitle">{meta.sub}</div>
       </div>
-      <div className="rp-body">{Panel && <Panel state={toolState[tool]} set={update(tool)} />}</div>
+      <div className="rp-body">{Panel && <Panel {...panelProps} />}</div>
       <div className="rp-footer">
-        <Button className="btn-primary w-full" onClick={onExport} disabled={disabled}>
+        <Button className="btn-primary w-full" onClick={onExport} disabled={disabled || exporting}>
           <i className="ti ti-download" />
-          Export file
+          {exporting ? "Exporting…" : "Export file"}
         </Button>
       </div>
     </aside>

@@ -25,7 +25,15 @@ export const TOOL_META = {
 export const IMAGE_TOOL_IDS = IMAGE_TOOLS.map((t) => t.id)
 
 export const DEFAULT_TOOL_STATE = {
-  crop: { aspect: "Free", width: 1920, height: 1080, linked: true, quality: 85, format: "keep" },
+  crop: {
+    aspect: "Free",
+    width: 1920,
+    height: 1080,
+    linked: true,
+    quality: 85,
+    format: "keep",
+    region: { x: 0, y: 0, width: 0, height: 0 },
+  },
   compress: { preset: "Balanced", quality: 80, stripExif: true },
   convert: { format: "webp", profile: "sRGB", bg: "white" },
   rotate: { rotation: 0, flipH: false, flipV: false, format: "keep" },

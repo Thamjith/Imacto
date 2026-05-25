@@ -14,6 +14,8 @@ export function Canvas({
   flipV,
   undo,
   showCropOverlay,
+  cropState,
+  onCropRegionChange,
 }) {
   if (!loaded || !image) {
     return (
@@ -27,23 +29,34 @@ export function Canvas({
     )
   }
 
+  const region =
+    cropState?.region?.width > 0
+      ? cropState.region
+      : { x: 0, y: 0, width: image.width, height: image.height }
+
   return (
     <div className="canvas">
       <div className="preview-wrap">
         <Preview
           src={image.objectUrl}
           alt={image.name}
-          width={image.width}
-          height={image.height}
+          sourceWidth={image.width}
+          sourceHeight={image.height}
+          outputWidth={cropState?.width ?? image.width}
+          outputHeight={cropState?.height ?? image.height}
           rotation={rotation}
           flipH={flipH}
           flipV={flipV}
           zoom={zoom}
           showCropOverlay={showCropOverlay}
+          cropRegion={region}
+          cropAspect={cropState?.aspect}
+          onCropRegionChange={onCropRegionChange}
         />
         <div className="meta-row">
           <span>
-            {image.width} × {image.height}
+            {Math.round(region.width)} × {Math.round(region.height)}
+            {showCropOverlay ? ` → ${cropState?.width} × ${cropState?.height}` : ` · ${image.width} × ${image.height}`}
           </span>
           <span className="sep" />
           <span>{zoom}%</span>

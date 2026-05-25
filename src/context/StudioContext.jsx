@@ -1,8 +1,19 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { DEFAULT_TOOL_STATE } from "@/constants/tools"
+import { exportCropResize } from "@/lib/imageExport"
 import { loadImageFromFile, revokeImageUrl } from "@/lib/imageUpload"
 
 const StudioContext = createContext(null)
+
+function initialCropState(width, height) {
+  const region = { x: 0, y: 0, width, height }
+  return {
+    ...DEFAULT_TOOL_STATE.crop,
+    width,
+    height,
+    region,
+  }
+}
 
 export function StudioProvider({ children }) {
   const [image, setImage] = useState(null)
@@ -11,6 +22,7 @@ export function StudioProvider({ children }) {
   const [toast, setToast] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [toolState, setToolState] = useState(DEFAULT_TOOL_STATE)
+  const [exporting, setExporting] = useState(false)
 
   const loaded = image !== null
 
@@ -30,12 +42,7 @@ export function StudioProvider({ children }) {
       })
       setToolState((s) => ({
         ...s,
-        crop: {
-          ...s.crop,
-          width: result.width,
-          height: result.height,
-          format: "keep",
-        },
+        crop: initialCropState(result.width, result.height),
       }))
       setStep("edit")
       setZoom(100)
@@ -56,14 +63,48 @@ export function StudioProvider({ children }) {
     setUploadError(null)
   }, [])
 
+  const updateCropRegion = useCallback((region) => {
+    setToolState((s) => {
+      const next = { ...s.crop, region }
+      if (s.crop.linked && s.crop.aspect === "Free") {
+        return {
+          ...s,
+          crop: {
+            ...next,
+            width: region.width,
+            height: region.height,
+          },
+        }
+      }
+      return { ...s, crop: next }
+    })
+  }, [])
+
   const handleExport = useCallback(
-    (format) => {
-      if (!image) return
+    async (toolId) => {
+      if (!image || exporting) return
+
+      if (toolId === "crop") {
+        setExporting(true)
+        try {
+          const result = await exportCropResize(image, toolState.crop)
+          setStep("export")
+          showToast(`Downloaded · ${result.filename} · ${result.sizeLabel}`, 3600)
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Export failed."
+          showToast(message, 3600)
+        } finally {
+          setExporting(false)
+        }
+        return
+      }
+
+      const format = toolState[toolId]?.format ?? toolState.crop.format
       const ext = format === "keep" ? image.name.split(".").pop() || "jpg" : format
       setStep("export")
       showToast(`Export queued · ${image.name.replace(/\.[^.]+$/, "")}.${ext} · imacto`)
     },
-    [image, showToast]
+    [image, exporting, toolState, showToast]
   )
 
   useEffect(() => {
@@ -86,8 +127,23 @@ export function StudioProvider({ children }) {
       uploadFile,
       handleUnload,
       handleExport,
+      updateCropRegion,
+      exporting,
     }),
-    [image, loaded, zoom, step, toast, uploadError, toolState, uploadFile, handleUnload, handleExport]
+    [
+      image,
+      loaded,
+      zoom,
+      step,
+      toast,
+      uploadError,
+      toolState,
+      uploadFile,
+      handleUnload,
+      handleExport,
+      updateCropRegion,
+      exporting,
+    ]
   )
 
   return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>

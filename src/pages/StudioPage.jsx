@@ -22,7 +22,7 @@ export function StudioPage() {
 
   if (!tool) return <Navigate to="/crop" replace />
 
-  const handleExport = () => studio.handleExport(studio.toolState.crop.format)
+  const handleExport = () => studio.handleExport(tool)
 
   return (
     <div className="app">
@@ -47,6 +47,8 @@ export function StudioPage() {
             flipV={studio.toolState.rotate.flipV}
             undo={studio.handleUnload}
             showCropOverlay={tool === "crop"}
+            cropState={studio.toolState.crop}
+            onCropRegionChange={studio.updateCropRegion}
           />
           {studio.toast && (
             <div className="toast">
@@ -61,6 +63,8 @@ export function StudioPage() {
           setToolState={studio.setToolState}
           onExport={handleExport}
           disabled={!studio.loaded}
+          exporting={studio.exporting}
+          image={studio.image}
         />
       </div>
     </div>
