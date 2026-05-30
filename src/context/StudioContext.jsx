@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { DEFAULT_TOOL_STATE } from "@/constants/tools"
-import { exportCompress, exportCropResize } from "@/lib/imageExport"
+import { exportCompress, exportConvert, exportCropResize } from "@/lib/imageExport"
 import { loadImageFromFile, revokeImageUrl } from "@/lib/imageUpload"
 
 const StudioContext = createContext(null)
@@ -84,13 +84,15 @@ export function StudioProvider({ children }) {
     async (toolId) => {
       if (!image || exporting) return
 
-      if (toolId === "crop" || toolId === "compress") {
+      if (toolId === "crop" || toolId === "compress" || toolId === "convert") {
         setExporting(true)
         try {
           const result =
             toolId === "crop"
               ? await exportCropResize(image, toolState.crop)
-              : await exportCompress(image, toolState.compress)
+              : toolId === "compress"
+                ? await exportCompress(image, toolState.compress)
+                : await exportConvert(image, toolState.convert)
           setStep("export")
           showToast(`Downloaded · ${result.filename} · ${result.sizeLabel}`, 3600)
         } catch (err) {

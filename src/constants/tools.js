@@ -1,7 +1,7 @@
 export const IMAGE_TOOLS = [
   { id: "crop", label: "Crop & resize", icon: "ti-crop" },
   { id: "compress", label: "Compress", icon: "ti-arrows-minimize" },
-  { id: "convert", label: "Convert format", icon: "ti-transform", soon: true },
+  { id: "convert", label: "Convert format", icon: "ti-transform" },
   { id: "rotate", label: "Rotate & flip", icon: "ti-rotate-clockwise", soon: true },
   { id: "bgremove", label: "Background remove", icon: "ti-eraser", soon: true },
   { id: "watermark", label: "Watermark", icon: "ti-typography", soon: true },

@@ -21,12 +21,13 @@ const BG_OPTIONS = [
   { id: "transparent", checker: true },
 ]
 
-export function ConvertPanel({ state, set }) {
+export function ConvertPanel({ state, set, image }) {
+  const sourceLabel = image?.formatLabel ?? "—"
   return (
     <>
       <PanelSection label="target format">
         <FormatSelect value={state.format} onChange={(format) => set({ format })} options={FORMAT_OPTIONS} />
-        <div className="field-help">Source: JPG · sRGB</div>
+        <div className="field-help">Source: {sourceLabel} · {state.profile}</div>
       </PanelSection>
       <PanelSection label="color profile">
         <ChipGroup options={PROFILES} value={state.profile} onChange={(profile) => set({ profile })} />
@@ -36,7 +37,7 @@ export function ConvertPanel({ state, set }) {
         <ColorSwatches value={state.bg} onChange={(bg) => set({ bg })} options={BG_OPTIONS} />
       </PanelSection>
       <PanelSection label="size comparison">
-        <EstimateRow quality={85} format={state.format} />
+        <EstimateRow quality={92} format={state.format} originalBytes={image?.size} />
       </PanelSection>
     </>
   )

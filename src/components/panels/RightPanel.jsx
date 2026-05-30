@@ -31,7 +31,7 @@ export function RightPanel({ tool, toolState, setToolState, onExport, disabled, 
         }
       : tool === "compress"
         ? { state: toolState.compress, set: update("compress"), image }
-        : { state: toolState[tool], set: update(tool) }
+        : { state: toolState[tool], set: update(tool), image }
 
   return (
     <aside className="rightpanel">

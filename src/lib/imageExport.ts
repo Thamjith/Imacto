@@ -32,6 +32,12 @@ export interface CompressState {
   quality?: number
 }
 
+export interface ConvertState {
+  format?: string
+  profile?: string
+  bg?: string
+}
+
 const FORMAT_META: Record<string, FormatMeta> = {
   jpg: { mime: "image/jpeg", ext: "jpg" },
   jpeg: { mime: "image/jpeg", ext: "jpg" },
@@ -175,6 +181,55 @@ export async function exportCompress(image: LoadedImage, compressState: Compress
 
   const { blob, ext: encodedExt } = await canvasToBlob(canvas, mime, useQuality ? quality : undefined)
   const filename = buildFilename(image.name, encodedExt ?? preferredExt, "compressed")
+
+  triggerDownload(blob, filename)
+
+  return {
+    filename,
+    size: blob.size,
+    sizeLabel: formatFileSize(blob.size),
+    width: image.width,
+    height: image.height,
+  }
+}
+
+const BG_FILL: Record<string, string> = {
+  white: "#ffffff",
+  black: "#000000",
+}
+
+/**
+ * Re-encode the image at full resolution into a different container format.
+ *
+ * Formats without an alpha channel (e.g. JPEG) are flattened onto the chosen
+ * background color so transparent regions don't turn black. Lossy formats are
+ * encoded at high quality since conversion is about format, not compression.
+ */
+export async function exportConvert(image: LoadedImage, convertState: ConvertState): Promise<ExportResult> {
+  const img = await loadImageElement(image.objectUrl)
+
+  const canvas = document.createElement("canvas")
+  canvas.width = image.width
+  canvas.height = image.height
+  const ctx = canvas.getContext("2d")
+  if (!ctx) throw new Error("Canvas is not available.")
+
+  const { mime, ext: preferredExt } = resolveOutputFormat(convertState.format, image)
+  const supportsAlpha = mime === "image/png" || mime === "image/webp" || mime === "image/avif"
+  const bg = convertState.bg ?? "white"
+
+  // Flatten onto a solid background when the target can't store alpha, or when
+  // the user explicitly picks a solid color over transparency.
+  if (!supportsAlpha || bg !== "transparent") {
+    ctx.fillStyle = BG_FILL[bg] ?? "#ffffff"
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  }
+
+  ctx.drawImage(img, 0, 0, image.width, image.height)
+
+  const useQuality = mime === "image/jpeg" || mime === "image/webp" || mime === "image/avif"
+  const { blob, ext: encodedExt } = await canvasToBlob(canvas, mime, useQuality ? 0.92 : undefined)
+  const filename = buildFilename(image.name, encodedExt ?? preferredExt, "converted")
 
   triggerDownload(blob, filename)
 
