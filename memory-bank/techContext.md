@@ -82,4 +82,10 @@ npm run test:watch # vitest watch
 ## Dependencies of note
 
 - React 19 / react-dom 19, react-router-dom 7, Vite 8, Tailwind 4, Vitest 4, ESLint 10.
+- **`@imgly/background-removal`** (background remove): in-browser ML segmentation (IS-Net,
+  ONNX Runtime + WASM). Imported dynamically so it's code-split. Bundles the ONNX Runtime
+  WASM (~24 MB lazy chunk); model weights stream from IMG.LY's CDN and cache locally. An
+  interim exception to the "Rust→WASM for heavy processing" policy — a battle-tested
+  client-side model beat building a custom Rust/WASM segmentation pipeline. Revisit if the
+  Rust/WASM toolchain matures.
 - See `package.json` for exact versions.

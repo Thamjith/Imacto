@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { DEFAULT_TOOL_STATE } from "@/constants/tools"
 import { exportCompress, exportConvert, exportCropResize, exportRotateFlip } from "@/lib/imageExport"
+import {
+  downloadModel,
+  exportBackgroundRemoval,
+  forgetModel,
+  getModelStatus,
+} from "@/lib/backgroundRemoval"
 import { loadImageFromFile, revokeImageUrl } from "@/lib/imageUpload"
 
 const StudioContext = createContext(null)
@@ -23,6 +29,18 @@ export function StudioProvider({ children }) {
   const [uploadError, setUploadError] = useState(null)
   const [toolState, setToolState] = useState(DEFAULT_TOOL_STATE)
   const [exporting, setExporting] = useState(false)
+  const [bgModel, setBgModel] = useState(() => getModelStatus())
+
+  const downloadBgModel = useCallback(async (version, onProgress) => {
+    const resolved = await downloadModel(version, onProgress)
+    setBgModel(getModelStatus())
+    return resolved
+  }, [])
+
+  const forgetBgModel = useCallback(() => {
+    forgetModel()
+    setBgModel(getModelStatus())
+  }, [])
 
   const loaded = image !== null
 
@@ -84,6 +102,27 @@ export function StudioProvider({ children }) {
     async (toolId) => {
       if (!image || exporting) return
 
+      if (toolId === "bgremove") {
+        if (!getModelStatus().downloaded) {
+          showToast("Download the background-removal model first.", 3200)
+          return
+        }
+        setExporting(true)
+        try {
+          const result = await exportBackgroundRemoval(image, toolState.bgremove, (p) => {
+            setToast(`${p.label}… ${Math.round(p.ratio * 100)}%`)
+          })
+          setStep("export")
+          showToast(`Downloaded · ${result.filename} · ${result.sizeLabel}`, 3600)
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Background removal failed."
+          showToast(message, 3600)
+        } finally {
+          setExporting(false)
+        }
+        return
+      }
+
       if (toolId === "crop" || toolId === "compress" || toolId === "convert" || toolId === "rotate") {
         setExporting(true)
         try {
@@ -136,6 +175,9 @@ export function StudioProvider({ children }) {
       handleExport,
       updateCropRegion,
       exporting,
+      bgModel,
+      downloadBgModel,
+      forgetBgModel,
     }),
     [
       image,
@@ -150,6 +192,9 @@ export function StudioProvider({ children }) {
       handleExport,
       updateCropRegion,
       exporting,
+      bgModel,
+      downloadBgModel,
+      forgetBgModel,
     ]
   )
 

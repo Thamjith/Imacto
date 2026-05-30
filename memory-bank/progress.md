@@ -22,6 +22,13 @@ _Last updated: 2026-05-30 (Convert format enabled)_
   horizontal/vertical flip, live CSS-transform preview, real Canvas export sized to the
   rotated bounding box (no corner clipping), non-alpha targets flattened onto a background,
   → local download (`-rotated` suffix).
+- **Background remove tool:** on-device ML segmentation via `@imgly/background-removal`
+  (IS-Net fp16, ONNX Runtime + WASM, fully client-side). Gated behind a **consent screen**
+  (explains local processing + size + repo link) before the model downloads; weights are
+  cached locally (Cache Storage) and the version is recorded in `localStorage`. Supports a
+  **version/update check** (npm registry) with a manual update, transparent/white/black
+  background replacement, PNG/WebP output → local download (`-nobg` suffix). Export is
+  disabled until the model is downloaded.
 - **Output size estimation** (`src/lib/estimate.js`), using real file size when available.
 - **Sidebar** with image tools + "coming soon" gating for WIP tools and video tools.
 - **Unit tests** for pure libs (`cropGeometry`, `estimate`) via Vitest.
@@ -32,7 +39,6 @@ _Last updated: 2026-05-30 (Convert format enabled)_
   add `tsconfig.json`, and type the context/registry/lib surfaces.
 - **Rust + WebAssembly pipeline** — toolchain + first WASM module for heavy media
   processing (introduced when the first heavy need appears; runs client-side in a Worker).
-- **Background remove** (subject isolation) — stubbed.
 - **Watermark** rendering — stubbed.
 - **Video tools** (trim, convert, compress) — UI placeholders only.
 - **Apply/commit** action to replace the in-state image after an edit (undo stack later).
@@ -41,10 +47,9 @@ _Last updated: 2026-05-30 (Convert format enabled)_
 
 ## Current status
 
-Early but functional. Four image tools (Crop & resize, Compress, Convert format, Rotate &
-flip) are production-real and export locally. The remaining image tools (Background remove,
-Watermark) and all video tools are UI stubs disabled behind "coming soon". Memory bank
-initialized on 2026-05-30.
+Early but functional. Five image tools (Crop & resize, Compress, Convert format, Rotate &
+flip, Background remove) are production-real and export locally. Watermark and all video
+tools remain UI stubs disabled behind "coming soon". Memory bank initialized on 2026-05-30.
 
 **Architectural direction (2026-05-30):** the project will move to **TypeScript**
 everywhere, and heavy image/video processing beyond plain JS/Canvas will be implemented in
@@ -56,5 +61,11 @@ everywhere, and heavy image/video processing beyond plain JS/Canvas will be impl
   rasterizes to PNG on export.
 - Rotate & flip exports independently of crop (no combined rotate-then-crop pipeline yet);
   the in-canvas preview rotates via CSS transform only.
+- Background remove bundles the **ONNX Runtime WASM (~24 MB, lazy-loaded chunk)** into the
+  build (engine, not weights); model weights (~40 MB) stream from IMG.LY's CDN on first use
+  and cache locally. No live preview (runs at export). Auto "update" can only re-point to a
+  newer published data version — not guaranteed compatible with the pinned library, so it's
+  surfaced as an opt-in. Multi-threaded WASM needs COOP/COEP headers (not set) → currently
+  single-threaded (slower). The `feather` control is not yet wired into the cutout.
 - No in-place edit commit — workflow is export-only.
 - No license specified yet (see README).

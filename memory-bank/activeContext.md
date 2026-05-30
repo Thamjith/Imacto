@@ -22,11 +22,31 @@ uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and to
 
 ## State of the tools
 
-- **Real & working:** Crop & resize, Compress, Convert format, Rotate & flip — all export
-  via the Canvas pipeline and download locally.
-- **Stubbed / `soon` (disabled in sidebar, routes redirect to `/crop`):** Background remove,
-  Watermark. Panels and default state exist but are unreachable from the UI.
+- **Real & working:** Crop & resize, Compress, Convert format, Rotate & flip, Background
+  remove — all export and download locally (the first four via the Canvas pipeline).
+- **Stubbed / `soon` (disabled in sidebar, routes redirect to `/crop`):** Watermark. Panel
+  and default state exist but it's unreachable from the UI.
 - **Video tools:** UI placeholders only — coming soon.
+
+### Background remove (enabled 2026-05-30)
+- **Library:** `@imgly/background-removal` (IS-Net fp16, ONNX Runtime + WASM, fully
+  client-side). Loaded via **dynamic `import()`** so it's code-split out of the initial
+  bundle. The ONNX Runtime WASM (~24 MB) ships in `dist/` as a lazy chunk; the **model
+  weights (~40 MB) stream from IMG.LY's CDN** (`staticimgly.com/@imgly/background-removal-data/<ver>/dist/`)
+  on first use and cache in browser Cache Storage. User images never leave the browser.
+- **Consent gate:** `src/lib/backgroundRemoval.ts` persists consent + downloaded version in
+  `localStorage` (`imacto.bgmodel.v1`). `BgRemovePanel` shows a consent card (local-processing
+  explainer, size, ONNX/WASM details, repo link) with a progress-tracked **Download** button;
+  controls + export stay gated until the model is ready.
+- **Versioning/update:** `fetchLatestModelVersion()` queries the npm registry; the panel
+  offers "Check for updates" / "Update" (re-pins `publicPath` to the newer data version).
+  Caveat: a newer data version isn't guaranteed compatible with the pinned library, so it's
+  an explicit opt-in, not a silent swap.
+- **Export:** `exportBackgroundRemoval` runs the cutout, composites onto the chosen
+  background (transparent keeps alpha), encodes PNG/WebP, downloads `-nobg`. Branched in
+  `handleExport`; `StudioContext` exposes `bgModel` / `downloadBgModel` / `forgetBgModel`.
+- **Not yet:** live preview (runs at export only), `feather` edge refinement, COOP/COEP
+  headers for multi-threaded WASM (currently single-threaded).
 
 ### Rotate & flip (enabled 2026-05-30)
 - `exportRotateFlip` in `src/lib/imageExport.ts`: arbitrary-angle rotation + H/V flip,

@@ -62,7 +62,7 @@ export function StudioPage() {
           toolState={studio.toolState}
           setToolState={studio.setToolState}
           onExport={handleExport}
-          disabled={!studio.loaded}
+          disabled={!studio.loaded || (tool === "bgremove" && !studio.bgModel.downloaded)}
           exporting={studio.exporting}
           image={studio.image}
         />

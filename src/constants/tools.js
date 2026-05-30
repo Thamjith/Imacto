@@ -3,7 +3,7 @@ export const IMAGE_TOOLS = [
   { id: "compress", label: "Compress", icon: "ti-arrows-minimize" },
   { id: "convert", label: "Convert format", icon: "ti-transform" },
   { id: "rotate", label: "Rotate & flip", icon: "ti-rotate-clockwise" },
-  { id: "bgremove", label: "Background remove", icon: "ti-eraser", soon: true },
+  { id: "bgremove", label: "Background remove", icon: "ti-eraser" },
   { id: "watermark", label: "Watermark", icon: "ti-typography", soon: true },
 ]
 
@@ -39,6 +39,6 @@ export const DEFAULT_TOOL_STATE = {
   compress: { preset: "Balanced", quality: 80, stripExif: true },
   convert: { format: "webp", profile: "sRGB", bg: "white" },
   rotate: { rotation: 0, flipH: false, flipV: false, format: "keep" },
-  bgremove: { method: "Auto", feather: 4, bg: "transparent" },
+  bgremove: { method: "Auto", feather: 4, bg: "transparent", format: "png" },
   watermark: { text: "© studio 2026", position: "BR", opacity: 60, size: 24 },
 }
