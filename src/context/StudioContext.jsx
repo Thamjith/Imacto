@@ -1,11 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { DEFAULT_TOOL_STATE } from "@/constants/tools"
 import { exportCompress, exportConvert, exportCropResize, exportRotateFlip } from "@/lib/imageExport"
 import {
+  composeBackgroundRemoval,
   downloadModel,
   exportBackgroundRemoval,
   forgetModel,
   getModelStatus,
+  previewBackgroundRemoval,
 } from "@/lib/backgroundRemoval"
 import { loadImageFromFile, revokeImageUrl } from "@/lib/imageUpload"
 
@@ -30,9 +32,12 @@ export function StudioProvider({ children }) {
   const [toolState, setToolState] = useState(DEFAULT_TOOL_STATE)
   const [exporting, setExporting] = useState(false)
   const [bgModel, setBgModel] = useState(() => getModelStatus())
+  const [bgPreview, setBgPreview] = useState({ status: "idle", url: null })
+  const bgPreviewKeyRef = useRef(null)
+  const bgPreviewUrlRef = useRef(null)
 
-  const downloadBgModel = useCallback(async (version, onProgress) => {
-    const resolved = await downloadModel(version, onProgress)
+  const downloadBgModel = useCallback(async (version, variant, onProgress) => {
+    const resolved = await downloadModel(version, variant, onProgress)
     setBgModel(getModelStatus())
     return resolved
   }, [])
@@ -41,6 +46,41 @@ export function StudioProvider({ children }) {
     forgetModel()
     setBgModel(getModelStatus())
   }, [])
+
+  const resetBgPreview = useCallback(() => {
+    bgPreviewKeyRef.current = null
+    if (bgPreviewUrlRef.current) {
+      URL.revokeObjectURL(bgPreviewUrlRef.current)
+      bgPreviewUrlRef.current = null
+    }
+    setBgPreview({ status: "idle", url: null })
+  }, [])
+
+  const runBgPreview = useCallback(async () => {
+    const status = getModelStatus()
+    if (!image || !status.downloaded) return
+    const key = `${image.objectUrl}::${status.variant}`
+    if (bgPreviewKeyRef.current === key) return
+    bgPreviewKeyRef.current = key
+
+    if (bgPreviewUrlRef.current) {
+      URL.revokeObjectURL(bgPreviewUrlRef.current)
+      bgPreviewUrlRef.current = null
+    }
+    setBgPreview({ status: "processing", url: null })
+    try {
+      const url = await previewBackgroundRemoval(image)
+      if (bgPreviewKeyRef.current !== key) {
+        URL.revokeObjectURL(url)
+        return
+      }
+      bgPreviewUrlRef.current = url
+      setBgPreview({ status: "ready", url })
+    } catch {
+      if (bgPreviewKeyRef.current === key) bgPreviewKeyRef.current = null
+      setBgPreview({ status: "error", url: null })
+    }
+  }, [image])
 
   const loaded = image !== null
 
@@ -109,9 +149,13 @@ export function StudioProvider({ children }) {
         }
         setExporting(true)
         try {
-          const result = await exportBackgroundRemoval(image, toolState.bgremove, (p) => {
-            setToast(`${p.label}… ${Math.round(p.ratio * 100)}%`)
-          })
+          // Reuse the live-preview cutout when available to skip a second inference pass.
+          const result =
+            bgPreview.status === "ready" && bgPreviewUrlRef.current
+              ? await composeBackgroundRemoval(bgPreviewUrlRef.current, image, toolState.bgremove)
+              : await exportBackgroundRemoval(image, toolState.bgremove, (p) => {
+                  setToast(`${p.label}… ${Math.round(p.ratio * 100)}%`)
+                })
           setStep("export")
           showToast(`Downloaded · ${result.filename} · ${result.sizeLabel}`, 3600)
         } catch (err) {
@@ -150,7 +194,7 @@ export function StudioProvider({ children }) {
       setStep("export")
       showToast(`Export queued · ${image.name.replace(/\.[^.]+$/, "")}.${ext} · imacto`)
     },
-    [image, exporting, toolState, showToast]
+    [image, exporting, toolState, showToast, bgPreview]
   )
 
   useEffect(() => {
@@ -158,6 +202,11 @@ export function StudioProvider({ children }) {
       if (image?.objectUrl) revokeImageUrl(image.objectUrl)
     }
   }, [image?.objectUrl])
+
+  // Drop any stale background-removal preview whenever the source image changes.
+  useEffect(() => {
+    resetBgPreview()
+  }, [image?.objectUrl, resetBgPreview])
 
   const value = useMemo(
     () => ({
@@ -178,6 +227,9 @@ export function StudioProvider({ children }) {
       bgModel,
       downloadBgModel,
       forgetBgModel,
+      bgPreview,
+      runBgPreview,
+      resetBgPreview,
     }),
     [
       image,
@@ -195,6 +247,9 @@ export function StudioProvider({ children }) {
       bgModel,
       downloadBgModel,
       forgetBgModel,
+      bgPreview,
+      runBgPreview,
+      resetBgPreview,
     ]
   )
 

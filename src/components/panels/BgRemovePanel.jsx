@@ -4,7 +4,8 @@ import { ColorSwatches } from "@/components/common/ColorSwatches"
 import { FormatSelect } from "@/components/common/FormatSelect"
 import { PanelSection } from "@/components/common/PanelSection"
 import { useStudio } from "@/context/StudioContext"
-import { MODEL_REPO_URL, MODEL_SIZE_LABEL, fetchLatestModelVersion } from "@/lib/backgroundRemoval"
+import { cn } from "@/lib/utils"
+import { MODEL_OPTIONS, MODEL_REPO_URL, fetchLatestModelVersion, modelSize } from "@/lib/backgroundRemoval"
 
 const FORMAT_OPTIONS = [
   { value: "png", label: "PNG (recommended)" },
@@ -23,6 +24,36 @@ function isNewer(latest, current) {
   }
   return false
 }
+
+function ModelChooser({ selected, onChoose, disabled }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {MODEL_OPTIONS.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChoose(m.id)}
+          className={cn(
+            "flex items-center justify-between gap-2 rounded-[var(--border-radius-md)] border px-2.5 py-2 text-left disabled:opacity-50",
+            selected === m.id
+              ? "border-[var(--color-text-primary)] bg-[var(--color-background-secondary)]"
+              : "border-[var(--color-border-tertiary)]"
+          )}
+        >
+          <span className="flex flex-col">
+            <span className="text-xs text-[var(--color-text-primary)]">{m.label}</span>
+            <span className="text-[10px] leading-tight text-[var(--color-text-tertiary)]">{m.hint}</span>
+          </span>
+          <span className="shrink-0 text-[11px] text-[var(--color-text-secondary)]">{m.size}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+const EXTERNAL_NOTE =
+  "Only these IS-Net variants are supported by the on-device engine. Arbitrary external ONNX models (e.g. from the onnx/models zoo) use different inputs/outputs and aren't compatible."
 
 export function BgRemovePanel({ state, set }) {
   const { bgModel, downloadBgModel, forgetBgModel } = useStudio()
@@ -44,13 +75,13 @@ export function BgRemovePanel({ state, set }) {
     }
   }, [bgModel.downloaded])
 
-  const download = async (version) => {
+  const download = async (version, variant) => {
     setError(null)
     setPhase("downloading")
     setProgress(0)
     setProgressLabel("Starting…")
     try {
-      await downloadBgModel(version, (p) => {
+      await downloadBgModel(version, variant, (p) => {
         setProgress(p.ratio)
         setProgressLabel(p.label)
       })
@@ -61,19 +92,19 @@ export function BgRemovePanel({ state, set }) {
     }
   }
 
-  // Initial install always uses the version bundled with the library (compatible).
-  const installModel = () => download(null)
+  // Initial install uses the version bundled with the library (always compatible).
+  const installModel = () => download(null, state.model)
   // Explicit opt-in to a newer published library version.
-  const updateModel = () => download(latest)
-
-  const checkUpdate = async () => {
-    setPhase("checking")
-    setLatest(await fetchLatestModelVersion())
-    setPhase("idle")
+  const updateModel = () => download(latest, state.model)
+  // Switch the active model variant (re-downloads that variant if needed).
+  const switchVariant = (variant) => {
+    set({ model: variant })
+    if (variant !== bgModel.variant) download(bgModel.version, variant)
   }
 
   const pct = Math.round(progress * 100)
   const updateAvailable = bgModel.downloaded && isNewer(latest, bgModel.version)
+  const busy = phase === "downloading"
 
   if (!bgModel.downloaded) {
     return (
@@ -86,7 +117,7 @@ export function BgRemovePanel({ state, set }) {
           <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
             Background removal runs a neural segmentation model (IS-Net) entirely in your browser via
             ONNX Runtime + WebAssembly. Your images are never uploaded — only the model weights are
-            downloaded (about {MODEL_SIZE_LABEL}, one time) and cached locally for future use.
+            downloaded (once) and cached locally for future use.
           </p>
           <ul className="mt-2 flex flex-col gap-1 text-xs text-[var(--color-text-tertiary)]">
             <li className="flex items-center gap-1.5">
@@ -94,9 +125,6 @@ export function BgRemovePanel({ state, set }) {
             </li>
             <li className="flex items-center gap-1.5">
               <i className="ti ti-database" /> Cached after first download — no repeat fetch
-            </li>
-            <li className="flex items-center gap-1.5">
-              <i className="ti ti-cpu" /> ONNX Runtime · WebAssembly · IS-Net (fp16)
             </li>
           </ul>
           <a
@@ -109,7 +137,15 @@ export function BgRemovePanel({ state, set }) {
           </a>
         </div>
 
-        {phase === "downloading" ? (
+        <div>
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Model quality
+          </div>
+          <ModelChooser selected={state.model} onChoose={(m) => set({ model: m })} disabled={busy} />
+          <p className="mt-2 text-[10px] leading-tight text-[var(--color-text-tertiary)]">{EXTERNAL_NOTE}</p>
+        </div>
+
+        {busy ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
               <span>{progressLabel}</span>
@@ -124,7 +160,7 @@ export function BgRemovePanel({ state, set }) {
           </div>
         ) : (
           <Button className="btn-primary w-full" onClick={installModel}>
-            <i className="ti ti-download" /> Download model ({MODEL_SIZE_LABEL})
+            <i className="ti ti-download" /> Download model ({modelSize(state.model)})
           </Button>
         )}
 
@@ -141,14 +177,29 @@ export function BgRemovePanel({ state, set }) {
       <PanelSection label="output format">
         <FormatSelect value={state.format} onChange={(format) => set({ format })} options={FORMAT_OPTIONS} />
       </PanelSection>
+      <PanelSection label="model quality">
+        <ModelChooser selected={state.model} onChoose={switchVariant} disabled={busy} />
+        {busy ? (
+          <div className="mt-2 flex flex-col gap-1">
+            <div className="flex items-center justify-between text-[11px] text-[var(--color-text-secondary)]">
+              <span>{progressLabel}</span>
+              <span>{pct}%</span>
+            </div>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-background-secondary)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-text-primary)] transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+        <p className="mt-2 text-[10px] leading-tight text-[var(--color-text-tertiary)]">{EXTERNAL_NOTE}</p>
+      </PanelSection>
       <PanelSection label="model">
         <div className="rounded-[var(--border-radius-md)] border border-[var(--color-border-tertiary)] bg-[var(--color-background-secondary)] p-3 text-xs">
           <div className="flex items-center gap-1.5 text-[var(--color-text-primary)]">
             <i className="ti ti-circle-check text-[var(--color-success)]" />
-            <span>
-              Model ready
-              {bgModel.version && bgModel.version !== "bundled" ? ` · v${bgModel.version}` : ""}
-            </span>
+            <span>Model ready{bgModel.version ? ` · v${bgModel.version}` : ""}</span>
           </div>
           {bgModel.downloadedAt ? (
             <div className="mt-1 text-[var(--color-text-tertiary)]">
@@ -157,41 +208,20 @@ export function BgRemovePanel({ state, set }) {
           ) : null}
 
           {updateAvailable ? (
-            <div className="mt-2 flex items-center justify-between gap-2 rounded-[var(--border-radius-sm)] border border-[var(--color-border-tertiary)] bg-[var(--color-background-tertiary)] p-2">
+            <div className="mt-2 flex flex-col gap-2 rounded-[var(--border-radius-sm)] border border-[var(--color-border-tertiary)] bg-[var(--color-background-tertiary)] p-2">
               <span className="text-[var(--color-text-secondary)]">New model available · v{latest}</span>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="btn-secondary"
-                onClick={updateModel}
-                disabled={phase === "downloading"}
-              >
-                {phase === "downloading" ? `${pct}%` : "Update"}
+              <Button variant="secondary" size="sm" className="btn-secondary w-full" onClick={updateModel} disabled={busy}>
+                {busy ? `${pct}%` : "Update"}
               </Button>
             </div>
           ) : (
-            <div className="mt-2 flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="btn-secondary"
-                onClick={checkUpdate}
-                disabled={phase !== "idle"}
-              >
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" className="btn-secondary" onClick={async () => { setPhase("checking"); setLatest(await fetchLatestModelVersion()); setPhase("idle") }} disabled={phase !== "idle"}>
                 {phase === "checking" ? "Checking…" : "Check for updates"}
               </Button>
               {latest ? <span className="text-[var(--color-text-tertiary)]">Up to date</span> : null}
             </div>
           )}
-
-          {phase === "downloading" ? (
-            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-[var(--color-background-tertiary)]">
-              <div
-                className="h-full rounded-full bg-[var(--color-text-primary)] transition-all"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          ) : null}
 
           <button
             type="button"

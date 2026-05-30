@@ -2,6 +2,19 @@ import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { CropOverlay } from "./CropOverlay"
 
+function bgFillStyle(bgFill) {
+  switch (bgFill) {
+    case "white":
+      return { background: "#ffffff" }
+    case "black":
+      return { background: "#000000" }
+    case "blur":
+      return { background: "linear-gradient(135deg,#5a6cf5,#22b5a8)" }
+    default:
+      return {}
+  }
+}
+
 export function Preview({
   src,
   alt,
@@ -17,11 +30,15 @@ export function Preview({
   cropRegion,
   cropAspect,
   onCropRegionChange,
+  bgFill = null,
+  processing = false,
 }) {
   const transform = `rotate(${rotation}deg) scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1})`
   const scale = zoom / 100
   const displayW = Math.round(240 * scale)
   const displayH = Math.max(120, Math.round((sourceHeight / sourceWidth) * displayW))
+
+  const fillStyle = bgFillStyle(bgFill)
 
   const label = useMemo(() => {
     if (showCropOverlay && cropRegion) {
@@ -32,16 +49,23 @@ export function Preview({
 
   return (
     <div
-      className={cn("preview", src && "preview-has-image")}
+      className={cn("preview", src && "preview-has-image", bgFill === "transparent" && "preview-checker")}
       style={{
         width: displayW,
         height: displayH,
         transform,
         transition: "transform 220ms ease, width 120ms ease, height 120ms ease",
+        ...fillStyle,
       }}
     >
       {src ? (
         <img src={src} alt={alt} className="preview-image" draggable={false} />
+      ) : null}
+      {processing ? (
+        <div className="preview-processing">
+          <i className="ti ti-loader-2 spin" />
+          <span>Removing background…</span>
+        </div>
       ) : null}
       {showCropOverlay && cropRegion && onCropRegionChange ? (
         <CropOverlay

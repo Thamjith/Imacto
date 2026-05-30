@@ -20,6 +20,22 @@ export function StudioPage() {
     if (!tool && toolId) navigate("/crop", { replace: true })
   }, [tool, toolId, navigate])
 
+  const bgRemoveActive = tool === "bgremove"
+  const { runBgPreview } = studio
+
+  useEffect(() => {
+    if (bgRemoveActive && studio.bgModel.downloaded && studio.loaded) {
+      runBgPreview()
+    }
+  }, [
+    bgRemoveActive,
+    studio.bgModel.downloaded,
+    studio.bgModel.variant,
+    studio.loaded,
+    studio.image?.objectUrl,
+    runBgPreview,
+  ])
+
   if (!tool) return <Navigate to="/crop" replace />
 
   const handleExport = () => studio.handleExport(tool)
@@ -49,6 +65,9 @@ export function StudioPage() {
             showCropOverlay={tool === "crop"}
             cropState={studio.toolState.crop}
             onCropRegionChange={studio.updateCropRegion}
+            bgRemoveActive={bgRemoveActive}
+            bgPreview={studio.bgPreview}
+            bgFill={studio.toolState.bgremove.bg}
           />
           {studio.toast && (
             <div className="toast">

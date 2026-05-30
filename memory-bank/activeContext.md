@@ -50,11 +50,22 @@ uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and to
   "Check for updates" / "Update"; Update re-pins `publicPath` to that newer library version's
   CDN dir. Caveat: not guaranteed compatible with the installed library code, so it's an
   explicit opt-in, never used for the initial install.
-- **Export:** `exportBackgroundRemoval` runs the cutout, composites onto the chosen
-  background (transparent keeps alpha), encodes PNG/WebP, downloads `-nobg`. Branched in
-  `handleExport`; `StudioContext` exposes `bgModel` / `downloadBgModel` / `forgetBgModel`.
-- **Not yet:** live preview (runs at export only), `feather` edge refinement, COOP/COEP
-  headers for multi-threaded WASM (currently single-threaded).
+- **Model variants:** `MODEL_OPTIONS` exposes the 3 IS-Net variants the library supports —
+  `isnet` (Best, ~80 MB, **default**), `isnet_fp16` (Balanced), `isnet_quint8` (Fast). The
+  selected variant lives in `toolState.bgremove.model` and in the store; switching re-downloads
+  that variant. Arbitrary external ONNX models (e.g. onnx/models, which is also deprecated)
+  are NOT supported — the engine only accepts these variants.
+- **Live preview:** segmentation runs reusably (`runSegmentation` → `previewBackgroundRemoval`
+  for a transparent-cutout object URL; `composeBackgroundRemoval` composites + downloads).
+  `StudioContext` holds `bgPreview` ({status,url}) + `runBgPreview()`; `StudioPage` triggers it
+  when the tool is active + model ready, and `Canvas`/`Preview` render the cutout over the chosen
+  background (transparent→checker, white/black/blur), with a "Removing background…" overlay while
+  processing. Export reuses the preview cutout to avoid a second inference pass.
+- **Export:** branched in `handleExport`; `StudioContext` exposes `bgModel` / `downloadBgModel`
+  (now `(version, variant, onProgress)`) / `forgetBgModel` / `bgPreview` / `runBgPreview` /
+  `resetBgPreview`. Right panel widened to 264px to fit the tool controls.
+- **Not yet:** `feather` edge refinement; COOP/COEP headers for multi-threaded WASM (currently
+  single-threaded). Live preview re-runs per image/variant (not on every slider tick).
 
 ### Rotate & flip (enabled 2026-05-30)
 - `exportRotateFlip` in `src/lib/imageExport.ts`: arbitrary-angle rotation + H/V flip,

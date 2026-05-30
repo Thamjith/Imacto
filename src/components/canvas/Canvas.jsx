@@ -16,6 +16,9 @@ export function Canvas({
   showCropOverlay,
   cropState,
   onCropRegionChange,
+  bgRemoveActive = false,
+  bgPreview,
+  bgFill,
 }) {
   if (!loaded || !image) {
     return (
@@ -34,26 +37,31 @@ export function Canvas({
       ? cropState.region
       : { x: 0, y: 0, width: image.width, height: image.height }
 
+  const bgPreviewReady = bgRemoveActive && bgPreview?.status === "ready" && bgPreview?.url
+  const previewSrc = bgPreviewReady ? bgPreview.url : image.objectUrl
+
   return (
     <div className="canvas">
       <div className="canvas-scroll">
         <div className="preview-wrap">
-          <Preview
-            src={image.objectUrl}
-            alt={image.name}
-            sourceWidth={image.width}
-            sourceHeight={image.height}
-            outputWidth={cropState?.width ?? image.width}
-            outputHeight={cropState?.height ?? image.height}
-            rotation={rotation}
-            flipH={flipH}
-            flipV={flipV}
-            zoom={zoom}
-            showCropOverlay={showCropOverlay}
-            cropRegion={region}
-            cropAspect={cropState?.aspect}
-            onCropRegionChange={onCropRegionChange}
-          />
+        <Preview
+          src={previewSrc}
+          alt={image.name}
+          sourceWidth={image.width}
+          sourceHeight={image.height}
+          outputWidth={cropState?.width ?? image.width}
+          outputHeight={cropState?.height ?? image.height}
+          rotation={rotation}
+          flipH={flipH}
+          flipV={flipV}
+          zoom={zoom}
+          showCropOverlay={showCropOverlay}
+          cropRegion={region}
+          cropAspect={cropState?.aspect}
+          onCropRegionChange={onCropRegionChange}
+          bgFill={bgRemoveActive ? bgFill : null}
+          processing={bgRemoveActive && bgPreview?.status === "processing"}
+        />
           <div className="meta-row">
             <span>
               {Math.round(region.width)} × {Math.round(region.height)}

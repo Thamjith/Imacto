@@ -39,6 +39,6 @@ export const DEFAULT_TOOL_STATE = {
   compress: { preset: "Balanced", quality: 80, stripExif: true },
   convert: { format: "webp", profile: "sRGB", bg: "white" },
   rotate: { rotation: 0, flipH: false, flipV: false, format: "keep" },
-  bgremove: { method: "Auto", feather: 4, bg: "transparent", format: "png" },
+  bgremove: { model: "isnet", bg: "transparent", format: "png" },
   watermark: { text: "© studio 2026", position: "BR", opacity: 60, size: 24 },
 }
