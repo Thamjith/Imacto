@@ -10,6 +10,7 @@ import {
   previewBackgroundRemoval,
 } from "@/lib/backgroundRemoval"
 import { loadImageFromFile, revokeImageUrl } from "@/lib/imageUpload"
+import { useBgBrush } from "@/hooks/useBgBrush"
 
 const StudioContext = createContext(null)
 
@@ -35,6 +36,7 @@ export function StudioProvider({ children }) {
   const [bgPreview, setBgPreview] = useState({ status: "idle", url: null })
   const bgPreviewKeyRef = useRef(null)
   const bgPreviewUrlRef = useRef(null)
+  const bgBrush = useBgBrush()
 
   const downloadBgModel = useCallback(async (version, variant, onProgress) => {
     const resolved = await downloadModel(version, variant, onProgress)
@@ -149,13 +151,15 @@ export function StudioProvider({ children }) {
         }
         setExporting(true)
         try {
-          // Reuse the live-preview cutout when available to skip a second inference pass.
-          const result =
-            bgPreview.status === "ready" && bgPreviewUrlRef.current
-              ? await composeBackgroundRemoval(bgPreviewUrlRef.current, image, toolState.bgremove)
-              : await exportBackgroundRemoval(image, toolState.bgremove, (p) => {
-                  setToast(`${p.label}… ${Math.round(p.ratio * 100)}%`)
-                })
+          // Prefer the brush-edited cutout, else the live-preview cutout, to skip
+          // a second inference pass. Fall back to a full run only if neither exists.
+          const cutoutUrl =
+            bgBrush.editedUrl ?? (bgPreview.status === "ready" ? bgPreviewUrlRef.current : null)
+          const result = cutoutUrl
+            ? await composeBackgroundRemoval(cutoutUrl, image, toolState.bgremove)
+            : await exportBackgroundRemoval(image, toolState.bgremove, (p) => {
+                setToast(`${p.label}… ${Math.round(p.ratio * 100)}%`)
+              })
           setStep("export")
           showToast(`Downloaded · ${result.filename} · ${result.sizeLabel}`, 3600)
         } catch (err) {
@@ -194,7 +198,7 @@ export function StudioProvider({ children }) {
       setStep("export")
       showToast(`Export queued · ${image.name.replace(/\.[^.]+$/, "")}.${ext} · imacto`)
     },
-    [image, exporting, toolState, showToast, bgPreview]
+    [image, exporting, toolState, showToast, bgPreview, bgBrush.editedUrl]
   )
 
   useEffect(() => {
@@ -207,6 +211,14 @@ export function StudioProvider({ children }) {
   useEffect(() => {
     resetBgPreview()
   }, [image?.objectUrl, resetBgPreview])
+
+  // Seed the manual-brush work canvas from the model cutout once it's ready.
+  const initBaseline = bgBrush.initBaseline
+  useEffect(() => {
+    if (bgPreview.status === "ready" && bgPreview.url && image) {
+      initBaseline(bgPreview.url, image)
+    }
+  }, [bgPreview.status, bgPreview.url, image, initBaseline])
 
   const value = useMemo(
     () => ({
@@ -230,6 +242,7 @@ export function StudioProvider({ children }) {
       bgPreview,
       runBgPreview,
       resetBgPreview,
+      bgBrush,
     }),
     [
       image,
@@ -250,6 +263,7 @@ export function StudioProvider({ children }) {
       bgPreview,
       runBgPreview,
       resetBgPreview,
+      bgBrush,
     ]
   )
 

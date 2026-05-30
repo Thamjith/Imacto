@@ -1,6 +1,6 @@
 # Progress — Imacto Studio
 
-_Last updated: 2026-05-30 (Convert format enabled)_
+_Last updated: 2026-05-30 (Background-remove manual brush added)_
 
 ## What works
 
@@ -28,7 +28,9 @@ _Last updated: 2026-05-30 (Convert format enabled)_
   cached locally (Cache Storage) and the version is recorded in `localStorage`. Supports a
   **version/update check** (npm registry) with a manual update, transparent/white/black
   background replacement, PNG/WebP output → local download (`-nobg` suffix). Export is
-  disabled until the model is downloaded.
+  disabled until the model is downloaded. Includes a **live canvas preview** and a **manual
+  brush** (erase/restore at full source resolution) with unbounded multi-step undo/redo
+  (bottom-right bar), a "Reset to model output" action, and a JS-heap readout in the top bar.
 - **Output size estimation** (`src/lib/estimate.js`), using real file size when available.
 - **Sidebar** with image tools + "coming soon" gating for WIP tools and video tools.
 - **Unit tests** for pure libs (`cropGeometry`, `estimate`) via Vitest.
@@ -63,9 +65,13 @@ everywhere, and heavy image/video processing beyond plain JS/Canvas will be impl
   the in-canvas preview rotates via CSS transform only.
 - Background remove bundles the **ONNX Runtime WASM (~24 MB, lazy-loaded chunk)** into the
   build (engine, not weights); model weights (~40 MB) stream from IMG.LY's CDN on first use
-  and cache locally. No live preview (runs at export). Auto "update" can only re-point to a
-  newer published data version — not guaranteed compatible with the pinned library, so it's
-  surfaced as an opt-in. Multi-threaded WASM needs COOP/COEP headers (not set) → currently
-  single-threaded (slower). The `feather` control is not yet wired into the cutout.
+  and cache locally. Auto "update" can only re-point to a newer published data version — not
+  guaranteed compatible with the pinned library, so it's surfaced as an opt-in. Multi-threaded
+  WASM needs COOP/COEP headers (not set) → currently single-threaded (slower). The `feather`
+  control is not yet wired into the cutout.
+- Manual-brush undo history is **unbounded and full-resolution** (`ImageData` per stroke), so
+  long editing sessions on large images can grow the JS heap (made visible by the top-right
+  readout, which is Chromium-only and excludes GPU/canvas memory). Brushing assumes no active
+  rotation/flip.
 - No in-place edit commit — workflow is export-only.
 - No license specified yet (see README).

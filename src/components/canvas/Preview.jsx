@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { CropOverlay } from "./CropOverlay"
+import { BgBrushCanvas } from "./BgBrushCanvas"
 
 function bgFillStyle(bgFill) {
   switch (bgFill) {
@@ -32,6 +33,10 @@ export function Preview({
   onCropRegionChange,
   bgFill = null,
   processing = false,
+  brushActive = false,
+  brushMode = "off",
+  brushSize = 28,
+  brush = null,
 }) {
   const transform = `rotate(${rotation}deg) scale(${flipH ? -1 : 1}, ${flipV ? -1 : 1})`
   const scale = zoom / 100
@@ -39,6 +44,7 @@ export function Preview({
   const displayH = Math.max(120, Math.round((sourceHeight / sourceWidth) * displayW))
 
   const fillStyle = bgFillStyle(bgFill)
+  const showBrush = brushActive && brushMode !== "off" && brush?.ready
 
   const label = useMemo(() => {
     if (showCropOverlay && cropRegion) {
@@ -58,7 +64,18 @@ export function Preview({
         ...fillStyle,
       }}
     >
-      {src ? (
+      {showBrush ? (
+        <BgBrushCanvas
+          displayW={displayW}
+          displayH={displayH}
+          sourceWidth={sourceWidth}
+          sourceHeight={sourceHeight}
+          bgFill={bgFill}
+          mode={brushMode}
+          brushSize={brushSize}
+          brush={brush}
+        />
+      ) : src ? (
         <img src={src} alt={alt} className="preview-image" draggable={false} />
       ) : null}
       {processing ? (

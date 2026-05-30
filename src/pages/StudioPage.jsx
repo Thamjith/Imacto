@@ -68,6 +68,9 @@ export function StudioPage() {
             bgRemoveActive={bgRemoveActive}
             bgPreview={studio.bgPreview}
             bgFill={studio.toolState.bgremove.bg}
+            bgBrush={studio.bgBrush}
+            brushMode={studio.toolState.bgremove.brushMode}
+            brushSize={studio.toolState.bgremove.brushSize}
           />
           {studio.toast && (
             <div className="toast">

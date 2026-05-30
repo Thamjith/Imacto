@@ -1,12 +1,14 @@
 # Active Context — Imacto Studio
 
-_Last updated: 2026-05-30 (Convert format enabled)_
+_Last updated: 2026-05-30 (Background-remove manual brush added)_
 
 ## Current work focus
 
-Enabled and implemented the **Convert format** tool (real Canvas-based re-encode). The
-TypeScript migration of `src/lib` is also in progress (libs are now `.ts`). Repo has
-uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and tool wiring.
+Added a **manual brush** to Background remove (erase/restore refinement on top of the model
+cutout). Previously enabled/implemented the **Convert format** tool (real Canvas-based
+re-encode). The TypeScript migration of `src/lib` is also in progress (libs are now `.ts`).
+Repo has uncommitted changes across `src/lib/*`, `src/components/*`, `src/context/*`,
+`src/hooks/*`, `package.json`, `tsconfig*.json`, and tool wiring.
 
 ## Recent changes (from git + handoff)
 
@@ -64,8 +66,23 @@ uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and to
 - **Export:** branched in `handleExport`; `StudioContext` exposes `bgModel` / `downloadBgModel`
   (now `(version, variant, onProgress)`) / `forgetBgModel` / `bgPreview` / `runBgPreview` /
   `resetBgPreview`. Right panel widened to 264px to fit the tool controls.
+- **Manual brush (added 2026-05-30):** after the model runs, users can refine the cutout with a
+  brush. `useBgBrush` (`src/hooks/useBgBrush.js`, instantiated in `StudioContext`, exposed as
+  `bgBrush`) keeps a **full-resolution work canvas** seeded from the model cutout. **Erase** =
+  `globalCompositeOperation="destination-out"`; **Restore** = clip the brush path + redraw the
+  original image. Each completed stroke snapshots `ImageData` onto an **unbounded** undo stack
+  (index 0 = model output); redo stack clears on a new stroke. The edited cutout is committed to a
+  PNG object URL (`bgBrush.editedUrl`) that both live preview and export reuse (export prefers
+  `editedUrl` over `bgPreview.url`). State: `brushMode` (`off`/`erase`/`restore`) + `brushSize`
+  (display px) in `toolState.bgremove`. UI: `BgBrushCanvas` overlay (in `Preview`, display→source
+  pointer mapping like `CropOverlay`, interpolated strokes, brush-ring cursor); Undo/Redo icon
+  buttons in the bottom-right `.canvas-tools` bar (brush-mode only); "Manual refine" panel section
+  (Off/Erase/Restore toggle, size slider, **Reset to model output**) in `BgRemovePanel`. A JS-heap
+  readout (`performance.memory`, Chromium-only, ~1.5s poll) sits in the top-right `TopBar` to make
+  unbounded-history memory visible. Assumes no rotation/flip while brushing (rotate defaults to 0).
 - **Not yet:** `feather` edge refinement; COOP/COEP headers for multi-threaded WASM (currently
-  single-threaded). Live preview re-runs per image/variant (not on every slider tick).
+  single-threaded). Live preview re-runs per image/variant (not on every slider tick). Brush
+  snapshots are full-res + unbounded — large images can grow JS heap (surfaced by the readout).
 
 ### Rotate & flip (enabled 2026-05-30)
 - `exportRotateFlip` in `src/lib/imageExport.ts`: arbitrary-angle rotation + H/V flip,

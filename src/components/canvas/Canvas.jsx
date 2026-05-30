@@ -19,6 +19,9 @@ export function Canvas({
   bgRemoveActive = false,
   bgPreview,
   bgFill,
+  bgBrush,
+  brushMode = "off",
+  brushSize = 28,
 }) {
   if (!loaded || !image) {
     return (
@@ -38,7 +41,8 @@ export function Canvas({
       : { x: 0, y: 0, width: image.width, height: image.height }
 
   const bgPreviewReady = bgRemoveActive && bgPreview?.status === "ready" && bgPreview?.url
-  const previewSrc = bgPreviewReady ? bgPreview.url : image.objectUrl
+  const previewSrc = bgPreviewReady ? bgBrush?.editedUrl ?? bgPreview.url : image.objectUrl
+  const brushActive = bgRemoveActive && brushMode !== "off"
 
   return (
     <div className="canvas">
@@ -61,6 +65,10 @@ export function Canvas({
           onCropRegionChange={onCropRegionChange}
           bgFill={bgRemoveActive ? bgFill : null}
           processing={bgRemoveActive && bgPreview?.status === "processing"}
+          brushActive={brushActive}
+          brushMode={brushMode}
+          brushSize={brushSize}
+          brush={bgBrush}
         />
           <div className="meta-row">
             <span>
@@ -77,6 +85,29 @@ export function Canvas({
         </div>
       </div>
       <div className="canvas-tools">
+        {brushActive ? (
+          <>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => bgBrush?.undo()}
+              disabled={!bgBrush?.canUndo}
+              title="Undo brush stroke"
+            >
+              <i className="ti ti-arrow-back-up" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => bgBrush?.redo()}
+              disabled={!bgBrush?.canRedo}
+              title="Redo brush stroke"
+            >
+              <i className="ti ti-arrow-forward-up" />
+            </Button>
+            <span className="canvas-tools-sep" />
+          </>
+        ) : null}
         <Button variant="outline" size="icon-sm" onClick={() => setZoom((z) => Math.min(400, z + 25))} title="Zoom in">
           <i className="ti ti-zoom-in" />
         </Button>

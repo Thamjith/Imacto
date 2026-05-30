@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { ChipGroup } from "@/components/common/ChipGroup"
 import { ColorSwatches } from "@/components/common/ColorSwatches"
 import { FormatSelect } from "@/components/common/FormatSelect"
 import { PanelSection } from "@/components/common/PanelSection"
+import { SliderField } from "@/components/common/SliderField"
 import { useStudio } from "@/context/StudioContext"
 import { cn } from "@/lib/utils"
 import { MODEL_OPTIONS, MODEL_REPO_URL, fetchLatestModelVersion, modelSize } from "@/lib/backgroundRemoval"
@@ -55,8 +57,14 @@ function ModelChooser({ selected, onChoose, disabled }) {
 const EXTERNAL_NOTE =
   "Only these IS-Net variants are supported by the on-device engine. Arbitrary external ONNX models (e.g. from the onnx/models zoo) use different inputs/outputs and aren't compatible."
 
+const BRUSH_MODES = [
+  { id: "off", label: "Off" },
+  { id: "erase", label: "Erase" },
+  { id: "restore", label: "Restore" },
+]
+
 export function BgRemovePanel({ state, set }) {
-  const { bgModel, downloadBgModel, forgetBgModel } = useStudio()
+  const { bgModel, downloadBgModel, forgetBgModel, bgBrush } = useStudio()
   const [latest, setLatest] = useState(null)
   const [phase, setPhase] = useState("idle")
   const [progress, setProgress] = useState(0)
@@ -194,6 +202,34 @@ export function BgRemovePanel({ state, set }) {
           </div>
         ) : null}
         <p className="mt-2 text-[10px] leading-tight text-[var(--color-text-tertiary)]">{EXTERNAL_NOTE}</p>
+      </PanelSection>
+      <PanelSection label="manual refine">
+        <ChipGroup options={BRUSH_MODES} value={state.brushMode} onChange={(brushMode) => set({ brushMode })} />
+        {state.brushMode !== "off" ? (
+          <div className="mt-3 flex flex-col gap-3">
+            <SliderField
+              label="Brush size"
+              value={state.brushSize}
+              onChange={(brushSize) => set({ brushSize })}
+              min={4}
+              max={120}
+              unit="px"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="btn-secondary w-full"
+              onClick={() => bgBrush?.reset()}
+              disabled={!bgBrush?.canUndo}
+            >
+              <i className="ti ti-restore" /> Reset to model output
+            </Button>
+          </div>
+        ) : null}
+        <p className="mt-2 text-[10px] leading-tight text-[var(--color-text-tertiary)]">
+          Erase removes more of the subject; Restore paints original pixels back. Undo/redo is in the
+          bottom-right bar.
+        </p>
       </PanelSection>
       <PanelSection label="model">
         <div className="rounded-[var(--border-radius-md)] border border-[var(--color-border-tertiary)] bg-[var(--color-background-secondary)] p-3 text-xs">
