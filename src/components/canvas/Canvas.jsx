@@ -36,34 +36,36 @@ export function Canvas({
 
   return (
     <div className="canvas">
-      <div className="preview-wrap">
-        <Preview
-          src={image.objectUrl}
-          alt={image.name}
-          sourceWidth={image.width}
-          sourceHeight={image.height}
-          outputWidth={cropState?.width ?? image.width}
-          outputHeight={cropState?.height ?? image.height}
-          rotation={rotation}
-          flipH={flipH}
-          flipV={flipV}
-          zoom={zoom}
-          showCropOverlay={showCropOverlay}
-          cropRegion={region}
-          cropAspect={cropState?.aspect}
-          onCropRegionChange={onCropRegionChange}
-        />
-        <div className="meta-row">
-          <span>
-            {Math.round(region.width)} × {Math.round(region.height)}
-            {showCropOverlay ? ` → ${cropState?.width} × ${cropState?.height}` : ` · ${image.width} × ${image.height}`}
-          </span>
-          <span className="sep" />
-          <span>{zoom}%</span>
-          <span className="sep" />
-          <span>
-            {image.formatLabel} · sRGB
-          </span>
+      <div className="canvas-scroll">
+        <div className="preview-wrap">
+          <Preview
+            src={image.objectUrl}
+            alt={image.name}
+            sourceWidth={image.width}
+            sourceHeight={image.height}
+            outputWidth={cropState?.width ?? image.width}
+            outputHeight={cropState?.height ?? image.height}
+            rotation={rotation}
+            flipH={flipH}
+            flipV={flipV}
+            zoom={zoom}
+            showCropOverlay={showCropOverlay}
+            cropRegion={region}
+            cropAspect={cropState?.aspect}
+            onCropRegionChange={onCropRegionChange}
+          />
+          <div className="meta-row">
+            <span>
+              {Math.round(region.width)} × {Math.round(region.height)}
+              {showCropOverlay ? ` → ${cropState?.width} × ${cropState?.height}` : ` · ${image.width} × ${image.height}`}
+            </span>
+            <span className="sep" />
+            <span>{zoom}%</span>
+            <span className="sep" />
+            <span>
+              {image.formatLabel} · sRGB
+            </span>
+          </div>
         </div>
       </div>
       <div className="canvas-tools">
