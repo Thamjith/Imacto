@@ -94,4 +94,4 @@ Crop preview maps source pixels ↔ letterboxed display rect via `cropGeometry.j
 - Max upload 25 MB; SVG is rasterized to PNG on export.
 - Keep processing in-browser — no server/network for media.
 - Rotate/flip is preview-transform only — not applied on export yet.
-- Keep `.cursor/skills/imacto-studio/handoff.md` updated at the end of substantial sessions.
+- Update `activeContext.md` and `progress.md` at the end of substantial sessions.

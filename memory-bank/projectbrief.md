@@ -36,6 +36,5 @@ the user's machine.
 
 ## Source of truth
 
-This file defines project scope. All other memory-bank files build on it. See also the
-engineering skill at `.cursor/skills/imacto-studio/SKILL.md` and the session log at
-`.cursor/skills/imacto-studio/handoff.md`.
+This file defines project scope. All other memory-bank files build on it. The
+`memory-bank/` directory is the single authoritative source of project context.

@@ -41,5 +41,6 @@ documentation. Repo has uncommitted changes to `README.md`, `package.json`,
 
 ## Notes
 
-- The engineering skill (`.cursor/skills/imacto-studio/SKILL.md`) and `handoff.md` are the
-  authoritative running logs — keep them in sync with this file after substantial sessions.
+- `memory-bank/` is now the single source of truth (the prior `imacto-studio` skill and
+  its `handoff.md` were removed and folded in here). Keep `activeContext.md` and
+  `progress.md` current after substantial sessions.
