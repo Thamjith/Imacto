@@ -12,9 +12,11 @@
 | Styling | Tailwind CSS 4 (`@tailwindcss/vite`) + custom CSS (`src/App.css`, `src/index.css`) |
 | Fonts | `@fontsource-variable/geist` |
 | Class utils | `clsx`, `tailwind-merge`, `class-variance-authority`, `tw-animate-css` |
-| Image processing | Browser Canvas API (`toBlob`) — no WASM yet |
+| Language | **TypeScript** (target state — see migration note below) |
+| Light image processing | Browser Canvas API (`toBlob`) for simple ops |
+| Heavy media processing | **Rust compiled to WebAssembly** (see policy below) |
 | Linting | ESLint 10 (React Hooks + React Refresh plugins) |
-| Testing | Vitest 4 (unit tests for pure `src/lib` functions) |
+| Testing | Vitest 4 (unit tests for pure logic) |
 
 ## Development setup
 
@@ -32,15 +34,43 @@ npm run test:watch # vitest watch
 
 ## Conventions
 
-- **JS/JSX only — no TypeScript.** `.jsx` for components, `.js` for libs/constants.
+- **TypeScript everywhere.** `.tsx` for components, `.ts` for libs/constants. New code
+  must be written in TypeScript with proper typing (no `any` escape hatches without a
+  reason). The existing `.js`/`.jsx` source predates this decision and is being migrated
+  (see migration note).
 - **No semicolons** in most source files; match the style of the file you edit.
-- **Path alias `@/` → `src/`** (configured in `vite.config.js` and `jsconfig.json`).
+- **Path alias `@/` → `src/`** (configured in `vite.config.ts` and `tsconfig.json` after
+  migration; currently `vite.config.js` / `jsconfig.json`).
   Import like `import { useStudio } from "@/context/StudioContext"`. A `#/*` → `./src/*`
   import map also exists in `package.json`, but **prefer `@/`**.
 - **Named exports** for components (e.g. `export function CropPanel()`); default export
   only for `App`.
 - Keep **pure logic in `src/lib/*`** and React state in context/components.
 - Don't add narrating comments; only comment non-obvious intent.
+
+## Performance policy: Rust + WebAssembly for heavy processing
+
+- **Rule:** when image/video processing exceeds what plain JavaScript (incl. the Canvas
+  API) can handle efficiently — large files, pixel-heavy or compute-bound operations, real
+  video codecs/transcoding, background removal, etc. — implement it in **Rust compiled to
+  WebAssembly** rather than pushing JS harder.
+- **Still client-side.** WASM runs in the browser; this does **not** introduce a server.
+  The "files never leave the browser" guarantee holds.
+- **Where the line is:** keep simple, fast ops (basic crop/resize/re-encode) on the Canvas
+  API. Reach for Rust/WASM when JS is the bottleneck (slow, janky, or impossible).
+- **Suggested toolchain:** `wasm-pack` / `wasm-bindgen` for the Rust→WASM build, run the
+  heavy work off the main thread in a Web Worker, and load the `.wasm` via Vite. Validate
+  the exact toolchain when the first WASM module is introduced.
+
+## Migration notes (in progress / planned)
+
+- **JS → TypeScript:** the whole project is being migrated to TypeScript. Add a
+  `tsconfig.json`, rename `vite.config.js` → `.ts` and `jsconfig.json` → `tsconfig.json`,
+  convert `src/**/*.{js,jsx}` to `.ts`/`.tsx`, and type the `StudioContext` state/actions,
+  tool registry, and `src/lib` function signatures. ESLint config should add the
+  `typescript-eslint` toolchain.
+- **Rust/WASM:** no WASM module exists yet; introduce one the first time a heavy
+  processing need appears.
 
 ## Technical constraints
 

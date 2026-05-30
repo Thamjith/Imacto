@@ -27,17 +27,26 @@ documentation. Repo has uncommitted changes to `README.md`, `package.json`,
 
 ## Active decisions & considerations
 
-- Keep all media processing **client-side** (Canvas, no WASM/server yet).
+- **TypeScript everywhere:** the whole project is to be migrated to TypeScript
+  (`.ts`/`.tsx`); all new code must be TS. Migration of existing `.js`/`.jsx` is pending.
+- **Rust + WebAssembly for heavy processing:** any image/video work that plain JS/Canvas
+  can't handle efficiently should be implemented in Rust→WASM (run in a Web Worker, still
+  client-side). Keep light ops on the Canvas API. No WASM module exists yet.
+- Keep all media processing **client-side** (Canvas + future WASM; never a server).
 - Export-only workflow: no in-place "apply/commit" that replaces the canvas image.
 - `EstimateRow` uses the real `image.size` when available; falls back to a placeholder.
 
 ## Next steps (suggested)
 
-1. Apply **rotate/flip** in the export pipeline (shared `renderImage` helper) before crop.
-2. Wire **Convert** export using the same Canvas pipeline, then enable the tool.
-3. Optional **Apply** action to replace `image` in state after crop (toward an undo stack).
-4. Expand unit tests around `cropGeometry.js` and export format resolution.
-5. Consider edge handles (currently corners only) and min-crop-size UX.
+1. **Migrate the project to TypeScript** — add `tsconfig.json`, convert config + `src/**`
+   to `.ts`/`.tsx`, type `StudioContext`, the tool registry, and `src/lib` signatures.
+2. **Stand up the Rust→WASM toolchain** (e.g. `wasm-pack`/`wasm-bindgen` + Vite + Web
+   Worker) the first time a heavy processing need appears.
+3. Apply **rotate/flip** in the export pipeline (shared `renderImage` helper) before crop.
+4. Wire **Convert** export using the same Canvas pipeline, then enable the tool.
+5. Optional **Apply** action to replace `image` in state after crop (toward an undo stack).
+6. Expand unit tests around `cropGeometry` and export format resolution.
+7. Consider edge handles (currently corners only) and min-crop-size UX.
 
 ## Notes
 

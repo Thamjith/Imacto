@@ -17,7 +17,10 @@ the user's machine.
 ## Core requirements
 
 - **100% client-side.** No backend, no env vars, no secrets, no network calls for media.
-- **In-browser processing** via the Canvas API (`toBlob`); no WASM yet.
+- **In-browser processing.** Use the Canvas API for light ops; use **Rust compiled to
+  WebAssembly** for anything too heavy for plain JavaScript (large files, compute-bound
+  pixel work, video transcoding, etc.). WASM still runs in the browser — no server.
+- **TypeScript everywhere** (`.ts`/`.tsx`) — see `techContext.md` for migration status.
 - **Max upload ~25 MB** per file.
 - Focused, single-purpose tools rather than one monolithic editor.
 - Beautiful, modern UI with good UX (shadcn-style components, Tailwind 4).

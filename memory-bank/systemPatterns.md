@@ -35,9 +35,16 @@ src/
   default per-tool state. Adding/enabling a tool is data-first.
 - **URL is the tool selector:** route `/:toolId` resolves the active tool; unknown or
   disabled tool URLs redirect to `/crop` (gated by `ENABLED_TOOL_IDS`).
-- **Canvas pipeline pattern:** load → draw → `toBlob` → download
+- **Canvas pipeline pattern (light ops):** load → draw → `toBlob` → download
   (`loadImageElement` → `canvasToBlob` → `triggerDownload`), with filenames from
   `buildFilename(image.name, ext, "<suffix>")`.
+- **Rust + WebAssembly for heavy processing:** when an operation is too heavy for plain
+  JS/Canvas (large files, compute-bound pixel work, video codecs/transcoding, background
+  removal, etc.), implement it in **Rust compiled to WASM** and run it in a Web Worker.
+  Still 100% client-side — no server. Keep simple crop/resize/re-encode on Canvas; reach
+  for WASM only when JS is the bottleneck. See `techContext.md` for the policy/toolchain.
+- **Language:** the project targets **TypeScript** everywhere (`.ts`/`.tsx`); existing
+  `.js`/`.jsx` is being migrated.
 
 ## State model (`StudioContext`)
 
@@ -92,6 +99,7 @@ Crop preview maps source pixels ↔ letterboxed display rect via `cropGeometry.j
 
 - Canvas can't encode GIF/BMP/TIFF → fall back to PNG. AVIF falls back WebP → PNG.
 - Max upload 25 MB; SVG is rasterized to PNG on export.
-- Keep processing in-browser — no server/network for media.
+- Keep processing in-browser — no server/network for media (Rust/WASM also runs client-side).
+- For heavy/compute-bound media work, prefer Rust/WASM over straining JS (see above).
 - Rotate/flip is preview-transform only — not applied on export yet.
 - Update `activeContext.md` and `progress.md` at the end of substantial sessions.
