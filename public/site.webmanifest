@@ -1,0 +1,19 @@
+{
+  "name": "Imacto Studio",
+  "short_name": "Imacto",
+  "description": "A privacy-first, in-browser image editor: crop, resize, compress, convert, rotate, and remove backgrounds — your files never leave your device.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e0f12",
+  "theme_color": "#0e0f12",
+  "categories": ["photo", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
