@@ -65,22 +65,22 @@ export function Canvas({
             {image.formatLabel} · sRGB
           </span>
         </div>
-        <div className="canvas-tools">
-          <Button variant="outline" size="icon-sm" onClick={() => setZoom((z) => Math.min(400, z + 25))} title="Zoom in">
-            <i className="ti ti-zoom-in" />
-          </Button>
-          <Button variant="outline" size="icon-sm" onClick={() => setZoom((z) => Math.max(25, z - 25))} title="Zoom out">
-            <i className="ti ti-zoom-out" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setZoom(100)}>
-            <i className="ti ti-maximize" />
-            <span>Fit</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={undo}>
-            <i className="ti ti-arrow-back-up" />
-            <span>Clear</span>
-          </Button>
-        </div>
+      </div>
+      <div className="canvas-tools">
+        <Button variant="outline" size="icon-sm" onClick={() => setZoom((z) => Math.min(400, z + 25))} title="Zoom in">
+          <i className="ti ti-zoom-in" />
+        </Button>
+        <Button variant="outline" size="icon-sm" onClick={() => setZoom((z) => Math.max(25, z - 25))} title="Zoom out">
+          <i className="ti ti-zoom-out" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setZoom(100)}>
+          <i className="ti ti-maximize" />
+          <span>Fit</span>
+        </Button>
+        <Button variant="outline" size="sm" onClick={undo}>
+          <i className="ti ti-arrow-back-up" />
+          <span>Clear</span>
+        </Button>
       </div>
     </div>
   )

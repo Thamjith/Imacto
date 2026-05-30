@@ -415,9 +415,19 @@
 .meta-row .sep { width: 1px; height: 10px; background: var(--color-border-tertiary); }
 
 .canvas-tools {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 5;
   display: flex; align-items: center;
   gap: 4px;
-  margin-top: 2px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--color-background-secondary) 88%, transparent);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg, 10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .icon-btn {
   height: 28px; min-width: 28px;
