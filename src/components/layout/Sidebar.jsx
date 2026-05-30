@@ -13,6 +13,9 @@ export function Sidebar({ active, onSelect }) {
             label={t.label}
             active={active === t.id}
             onClick={() => onSelect(t.id)}
+            disabled={t.soon}
+            soon={t.soon}
+            tooltip={t.soon ? "Coming soon" : undefined}
           />
         ))}
       </div>

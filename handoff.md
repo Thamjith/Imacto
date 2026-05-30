@@ -111,12 +111,28 @@ toolState.crop = {
 
 ## Still stubbed / not done
 
-- **Compress, convert, rotate, bg remove, watermark** — UI only; export still shows “Export queued” toast (except crop).
-- **Rotate & flip** — preview transform only; not applied on crop export.
-- **EstimateRow** — still uses hardcoded “Original: 2.4 MB”.
+- **Convert, rotate, bg remove, watermark** — disabled in the sidebar with a **soon** badge (like video tools). Their routes redirect to `/crop`. Panels/state still exist but are unreachable from the UI.
+- **Rotate & flip** — preview transform only; not applied on crop/compress export.
+- **EstimateRow** — uses the real `image.size` when available (falls back to “2.4 MB” when no image).
 - **Video tools** — coming soon in sidebar.
 - **Apply without export** — no in-place “commit crop” to replace canvas image (export-only workflow).
 - Edge handles (only corners), no min crop size UX beyond clamping.
+
+---
+
+## Session 2026-05-30 — Disable WIP tools + Compress export
+
+### Sidebar “soon” gating
+- `src/constants/tools.js` — added `soon: true` to `convert`, `rotate`, `bgremove`, `watermark`; added `ENABLED_TOOL_IDS` (image tools without `soon`).
+- `src/components/layout/Sidebar.jsx` — image tools now render `disabled`/`soon` from `t.soon` with a “Coming soon” tooltip, reusing the same `NavItem` treatment as video tools.
+- `src/pages/StudioPage.jsx` — valid-tool check now uses `ENABLED_TOOL_IDS`, so direct navigation to a disabled tool URL redirects to `/crop`.
+
+### Compress export (real, browser-local)
+- `src/lib/imageExport.js` — `buildFilename` now takes a `suffix` arg (default `cropped`); new `exportCompress(image, compressState)` re-encodes the full-resolution image, applying `quality` to lossy formats (JPEG/WebP/AVIF), keeping original format, and stripping EXIF via canvas re-encode. Output filename: `{base}-compressed.{ext}`.
+- `src/context/StudioContext.jsx` — `handleExport` runs the real Canvas pipeline for both `crop` and `compress` (downloads + “Downloaded …” toast); other tools are unreachable now.
+- `src/lib/estimate.js` — `estimateKB(quality, format, baseKB?)` accepts an optional base size.
+- `src/components/common/EstimateRow.jsx` — uses real `originalBytes` when provided.
+- `src/components/panels/CompressPanel.jsx` + `src/components/panels/RightPanel.jsx` — pass `image` into the compress panel so the estimate reflects the uploaded file.
 
 ---
 

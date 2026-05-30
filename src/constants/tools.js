@@ -1,10 +1,10 @@
 export const IMAGE_TOOLS = [
   { id: "crop", label: "Crop & resize", icon: "ti-crop" },
   { id: "compress", label: "Compress", icon: "ti-arrows-minimize" },
-  { id: "convert", label: "Convert format", icon: "ti-transform" },
-  { id: "rotate", label: "Rotate & flip", icon: "ti-rotate-clockwise" },
-  { id: "bgremove", label: "Background remove", icon: "ti-eraser" },
-  { id: "watermark", label: "Watermark", icon: "ti-typography" },
+  { id: "convert", label: "Convert format", icon: "ti-transform", soon: true },
+  { id: "rotate", label: "Rotate & flip", icon: "ti-rotate-clockwise", soon: true },
+  { id: "bgremove", label: "Background remove", icon: "ti-eraser", soon: true },
+  { id: "watermark", label: "Watermark", icon: "ti-typography", soon: true },
 ]
 
 export const VIDEO_TOOLS = [
@@ -23,6 +23,8 @@ export const TOOL_META = {
 }
 
 export const IMAGE_TOOL_IDS = IMAGE_TOOLS.map((t) => t.id)
+
+export const ENABLED_TOOL_IDS = IMAGE_TOOLS.filter((t) => !t.soon).map((t) => t.id)
 
 export const DEFAULT_TOOL_STATE = {
   crop: {

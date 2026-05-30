@@ -7,7 +7,7 @@ import { SliderField } from "@/components/common/SliderField"
 
 const PRESETS = ["Lossless", "Balanced", "Smallest"]
 
-export function CompressPanel({ state, set }) {
+export function CompressPanel({ state, set, image }) {
   return (
     <>
       <PanelSection label="preset">
@@ -24,12 +24,12 @@ export function CompressPanel({ state, set }) {
       </PanelSection>
       <PanelSection label="quality">
         <SliderField
-          label="Compression"
+          label="Quality"
           value={state.quality}
           onChange={(quality) => set({ quality, preset: "Custom" })}
           min={10}
           max={100}
-          help="Higher values preserve detail; lower values reduce file size."
+          help="Higher quality keeps more detail but a larger file; lower quality means more compression and a smaller file."
         />
       </PanelSection>
       <PanelSection label="strip metadata">
@@ -40,7 +40,7 @@ export function CompressPanel({ state, set }) {
         <div className="field-help">Clears camera, location and timestamp.</div>
       </PanelSection>
       <PanelSection label="estimated size">
-        <EstimateRow quality={state.quality} format="keep" />
+        <EstimateRow quality={state.quality} format="keep" originalBytes={image?.size} />
       </PanelSection>
     </>
   )

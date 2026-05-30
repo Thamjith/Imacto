@@ -68,9 +68,9 @@ function canvasToBlob(canvas, mime, quality) {
   })
 }
 
-function buildFilename(originalName, ext) {
+function buildFilename(originalName, ext, suffix = "cropped") {
   const base = originalName.replace(/\.[^.]+$/, "") || "imacto-export"
-  return `${base}-cropped.${ext}`
+  return `${base}-${suffix}.${ext}`
 }
 
 export function triggerDownload(blob, filename) {
@@ -118,5 +118,40 @@ export async function exportCropResize(image, cropState) {
     sizeLabel: formatFileSize(blob.size),
     width: outW,
     height: outH,
+  }
+}
+
+/**
+ * Re-encode the image at full resolution to reduce file size.
+ *
+ * Quality applies to lossy formats (JPEG/WebP/AVIF). Lossless PNG keeps its
+ * format but is re-encoded through the canvas, which also strips EXIF metadata.
+ */
+export async function exportCompress(image, compressState) {
+  const img = await loadImageElement(image.objectUrl)
+
+  const canvas = document.createElement("canvas")
+  canvas.width = image.width
+  canvas.height = image.height
+  const ctx = canvas.getContext("2d")
+  if (!ctx) throw new Error("Canvas is not available.")
+
+  ctx.drawImage(img, 0, 0, image.width, image.height)
+
+  const { mime, ext: preferredExt } = resolveOutputFormat("keep", image)
+  const quality = Math.min(1, Math.max(0.1, (compressState.quality ?? 80) / 100))
+  const useQuality = mime === "image/jpeg" || mime === "image/webp" || mime === "image/avif"
+
+  const { blob, ext: encodedExt } = await canvasToBlob(canvas, mime, useQuality ? quality : undefined)
+  const filename = buildFilename(image.name, encodedExt ?? preferredExt, "compressed")
+
+  triggerDownload(blob, filename)
+
+  return {
+    filename,
+    size: blob.size,
+    sizeLabel: formatFileSize(blob.size),
+    width: image.width,
+    height: image.height,
   }
 }

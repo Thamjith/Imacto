@@ -5,7 +5,7 @@ import { RightPanel } from "@/components/panels/RightPanel"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { StageBar } from "@/components/layout/StageBar"
 import { TopBar } from "@/components/layout/TopBar"
-import { IMAGE_TOOL_IDS } from "@/constants/tools"
+import { ENABLED_TOOL_IDS } from "@/constants/tools"
 import { useStudio } from "@/context/StudioContext"
 import "@/App.css"
 
@@ -14,7 +14,7 @@ export function StudioPage() {
   const navigate = useNavigate()
   const studio = useStudio()
 
-  const tool = IMAGE_TOOL_IDS.includes(toolId) ? toolId : null
+  const tool = ENABLED_TOOL_IDS.includes(toolId) ? toolId : null
 
   useEffect(() => {
     if (!tool && toolId) navigate("/crop", { replace: true })
