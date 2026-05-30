@@ -1,0 +1,52 @@
+import { ChipGroup } from "@/components/common/ChipGroup"
+import { ColorSwatches, type Swatch } from "@/components/common/ColorSwatches"
+import { EstimateRow } from "@/components/common/EstimateRow"
+import { FormatSelect } from "@/components/common/FormatSelect"
+import { PanelSection } from "@/components/common/PanelSection"
+import { type ConvertToolState } from "@/constants/tools"
+import { type LoadedImage } from "@/lib/imageUpload"
+
+const FORMAT_OPTIONS = [
+  { value: "png", label: "PNG" },
+  { value: "webp", label: "WebP" },
+  { value: "avif", label: "AVIF" },
+  { value: "jpg", label: "JPG" },
+  { value: "gif", label: "GIF" },
+  { value: "bmp", label: "BMP" },
+  { value: "tiff", label: "TIFF" },
+]
+
+const PROFILES = ["sRGB", "Display P3", "Adobe RGB"]
+const BG_OPTIONS: Swatch[] = [
+  { id: "white", style: { background: "#fff" } },
+  { id: "black", style: { background: "#000" } },
+  { id: "transparent", checker: true },
+]
+
+interface ConvertPanelProps {
+  state: ConvertToolState
+  set: (patch: Partial<ConvertToolState>) => void
+  image?: LoadedImage | null
+}
+
+export function ConvertPanel({ state, set, image }: ConvertPanelProps) {
+  const sourceLabel = image?.formatLabel ?? "—"
+  return (
+    <>
+      <PanelSection label="target format">
+        <FormatSelect value={state.format} onChange={(format) => set({ format })} options={FORMAT_OPTIONS} />
+        <div className="field-help">Source: {sourceLabel} · {state.profile}</div>
+      </PanelSection>
+      <PanelSection label="color profile">
+        <ChipGroup options={PROFILES} value={state.profile} onChange={(profile) => set({ profile })} />
+      </PanelSection>
+      <PanelSection label="background">
+        <p className="mb-2 text-xs text-[var(--color-text-secondary)]">For transparent → JPG</p>
+        <ColorSwatches value={state.bg} onChange={(bg) => set({ bg })} options={BG_OPTIONS} />
+      </PanelSection>
+      <PanelSection label="size comparison">
+        <EstimateRow quality={92} format={state.format} originalBytes={image?.size} />
+      </PanelSection>
+    </>
+  )
+}

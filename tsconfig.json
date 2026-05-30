@@ -17,8 +17,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    "allowJs": true,
-    "checkJs": false,
+    "allowJs": false,
 
     "paths": {
       "@/*": ["./src/*"]
