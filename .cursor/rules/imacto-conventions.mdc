@@ -1,0 +1,34 @@
+---
+description: Core coding conventions for the Imacto Studio codebase (React 19 + Vite, browser-local media editing)
+alwaysApply: true
+---
+
+# Imacto Conventions
+
+For architecture, state model, and tool-wiring steps, see the `imacto-studio` skill (`.cursor/skills/imacto-studio/SKILL.md`).
+
+## Always
+
+- **JS/JSX only — no TypeScript.** `.jsx` for components, `.js` for libs/constants.
+- **Import via the `@/` alias** (maps to `src/`), not long relative paths.
+
+```jsx
+// GOOD
+import { useStudio } from "@/context/StudioContext"
+// AVOID
+import { useStudio } from "../../context/StudioContext"
+```
+
+- **No semicolons** in `src/` files (match the file you edit; `src/components/ui/*` shadcn files are the exception).
+- **Named exports** for components; default export only `App`.
+- Keep pure logic in `src/lib/*`; keep React state in `context/StudioContext.jsx`.
+- All media processing stays **client-side** (Canvas API). Do not add server calls or network deps for file handling.
+
+## Never
+
+- Don't add comments that just narrate code; only explain non-obvious intent.
+- Don't bypass `StudioContext` for studio state, or read tool settings outside `toolState[toolId]`.
+
+## Before finishing
+
+Run `npm run lint` and `npm run build` after substantive changes; update `.cursor/skills/imacto-studio/handoff.md` after a meaningful session.
