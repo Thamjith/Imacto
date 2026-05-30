@@ -1,9 +1,16 @@
 import { formatFileSize, type LoadedImage } from "@/lib/imageUpload"
 import { triggerDownload, type ExportResult } from "@/lib/imageExport"
 
-const STORE_KEY = "imacto.bgmodel.v1"
-const DATA_PKG = "@imgly/background-removal-data"
+const STORE_KEY = "imacto.bgmodel.v2"
+const LIB_PKG = "@imgly/background-removal"
+const DATA_DIR = "@imgly/background-removal-data"
 const CDN_BASE = "https://staticimgly.com"
+
+// IMPORTANT: the model assets on the CDN are versioned by the *library* version
+// (the default publicPath is `.../background-removal-data/<LIB_VERSION>/dist/`),
+// NOT by the @imgly/background-removal-data npm version. Keep this in sync with
+// the installed @imgly/background-removal version in package.json.
+const LIB_VERSION = "1.7.0"
 
 /** Public repository for the underlying model / library. */
 export const MODEL_REPO_URL = "https://github.com/imgly/background-removal-js"
@@ -11,10 +18,13 @@ export const MODEL_REPO_URL = "https://github.com/imgly/background-removal-js"
 export const MODEL_VARIANT = "isnet_fp16" as const
 /** Rough one-time download footprint surfaced in the consent UI. */
 export const MODEL_SIZE_LABEL = "~40 MB"
+/** Version of the model bundled with the installed library. */
+export const INSTALLED_MODEL_VERSION = LIB_VERSION
 
 interface BgStore {
   consented: boolean
   version: string | null
+  overridePath: string | null
   downloadedAt: number | null
 }
 
@@ -31,18 +41,23 @@ export interface DownloadProgress {
   label: string
 }
 
+function emptyStore(): BgStore {
+  return { consented: false, version: null, overridePath: null, downloadedAt: null }
+}
+
 function readStore(): BgStore {
   try {
     const raw = localStorage.getItem(STORE_KEY)
-    if (!raw) return { consented: false, version: null, downloadedAt: null }
+    if (!raw) return emptyStore()
     const parsed = JSON.parse(raw) as Partial<BgStore>
     return {
       consented: Boolean(parsed.consented),
       version: parsed.version ?? null,
+      overridePath: parsed.overridePath ?? null,
       downloadedAt: parsed.downloadedAt ?? null,
     }
   } catch {
-    return { consented: false, version: null, downloadedAt: null }
+    return emptyStore()
   }
 }
 
@@ -66,17 +81,17 @@ export function getModelStatus(): BgModelStatus {
 
 /** Forget consent + cached version so the consent gate reappears. */
 export function forgetModel(): void {
-  writeStore({ consented: false, version: null, downloadedAt: null })
+  writeStore(emptyStore())
 }
 
 /**
- * Best-effort lookup of the latest published model-data version on npm. Returns
- * null when offline or the registry is unreachable (callers fall back to the
- * version bundled with the installed library).
+ * Best-effort lookup of the latest published *library* version on npm. The CDN
+ * model assets are versioned by the library version, so this is the value that
+ * determines whether a newer model exists. Returns null when offline.
  */
 export async function fetchLatestModelVersion(): Promise<string | null> {
   try {
-    const res = await fetch(`https://registry.npmjs.org/${DATA_PKG}/latest`, { cache: "no-store" })
+    const res = await fetch(`https://registry.npmjs.org/${LIB_PKG}/latest`, { cache: "no-store" })
     if (!res.ok) return null
     const json = (await res.json()) as { version?: unknown }
     return typeof json.version === "string" ? json.version : null
@@ -85,8 +100,13 @@ export async function fetchLatestModelVersion(): Promise<string | null> {
   }
 }
 
+/**
+ * publicPath for a non-default (newer) library version, or undefined to use the
+ * library's built-in default (the version it shipped with — always compatible).
+ */
 function publicPathFor(version: string | null): string | undefined {
-  return version ? `${CDN_BASE}/${DATA_PKG}/${version}/dist/` : undefined
+  if (!version || version === LIB_VERSION) return undefined
+  return `${CDN_BASE}/${DATA_DIR}/${version}/dist/`
 }
 
 function toProgress(label: (phase: "fetch" | "compute") => string) {
@@ -117,8 +137,8 @@ export async function downloadModel(
     progress: (key, current, total) => onProgress?.(mapProgress(key, current, total)),
   })
 
-  const resolved = version ?? "bundled"
-  writeStore({ consented: true, version: resolved, downloadedAt: Date.now() })
+  const resolved = version ?? LIB_VERSION
+  writeStore({ consented: true, version: resolved, overridePath: publicPath ?? null, downloadedAt: Date.now() })
   return resolved
 }
 
@@ -154,8 +174,8 @@ export async function exportBackgroundRemoval(
   onProgress?: (progress: DownloadProgress) => void
 ): Promise<ExportResult> {
   const { removeBackground } = await import("@imgly/background-removal")
-  const { version } = readStore()
-  const publicPath = publicPathFor(version)
+  const { overridePath } = readStore()
+  const publicPath = overridePath ?? undefined
   const mapProgress = toProgress((phase) => (phase === "fetch" ? "Downloading model" : "Removing background"))
 
   const cutout = await removeBackground(image.objectUrl, {

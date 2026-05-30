@@ -44,24 +44,27 @@ export function BgRemovePanel({ state, set }) {
     }
   }, [bgModel.downloaded])
 
-  const runDownload = async () => {
+  const download = async (version) => {
     setError(null)
     setPhase("downloading")
     setProgress(0)
     setProgressLabel("Starting…")
     try {
-      const version = await fetchLatestModelVersion()
       await downloadBgModel(version, (p) => {
         setProgress(p.ratio)
         setProgressLabel(p.label)
       })
-      setLatest(version)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Download failed. Check your connection and try again.")
     } finally {
       setPhase("idle")
     }
   }
+
+  // Initial install always uses the version bundled with the library (compatible).
+  const installModel = () => download(null)
+  // Explicit opt-in to a newer published library version.
+  const updateModel = () => download(latest)
 
   const checkUpdate = async () => {
     setPhase("checking")
@@ -74,7 +77,7 @@ export function BgRemovePanel({ state, set }) {
 
   if (!bgModel.downloaded) {
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 px-[14px] py-3">
         <div className="rounded-[var(--border-radius-md)] border border-[var(--color-border-tertiary)] bg-[var(--color-background-secondary)] p-3">
           <div className="flex items-center gap-2 text-[13px] font-medium text-[var(--color-text-primary)]">
             <i className="ti ti-download" />
@@ -120,8 +123,8 @@ export function BgRemovePanel({ state, set }) {
             </div>
           </div>
         ) : (
-          <Button className="btn-primary w-full" onClick={runDownload}>
-            <i className="ti ti-download" /> Download &amp; enable model ({MODEL_SIZE_LABEL})
+          <Button className="btn-primary w-full" onClick={installModel}>
+            <i className="ti ti-download" /> Download model ({MODEL_SIZE_LABEL})
           </Button>
         )}
 
@@ -160,7 +163,7 @@ export function BgRemovePanel({ state, set }) {
                 variant="secondary"
                 size="sm"
                 className="btn-secondary"
-                onClick={runDownload}
+                onClick={updateModel}
                 disabled={phase === "downloading"}
               >
                 {phase === "downloading" ? `${pct}%` : "Update"}

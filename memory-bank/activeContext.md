@@ -32,16 +32,24 @@ uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and to
 - **Library:** `@imgly/background-removal` (IS-Net fp16, ONNX Runtime + WASM, fully
   client-side). Loaded via **dynamic `import()`** so it's code-split out of the initial
   bundle. The ONNX Runtime WASM (~24 MB) ships in `dist/` as a lazy chunk; the **model
-  weights (~40 MB) stream from IMG.LY's CDN** (`staticimgly.com/@imgly/background-removal-data/<ver>/dist/`)
-  on first use and cache in browser Cache Storage. User images never leave the browser.
+  weights (~40 MB) stream from IMG.LY's CDN** on first use and cache in browser Cache
+  Storage. User images never leave the browser.
+- **CDN model version == LIBRARY version, NOT the `-data` npm version.** The default
+  `publicPath` is `staticimgly.com/@imgly/background-removal-data/<LIB_VERSION>/dist/` and the
+  model key is `/models/isnet_fp16`. The `1.7.0` manifest has that key; the standalone
+  `@imgly/background-removal-data` npm release (1.4.5) uses the OLD key naming (`/models/small`)
+  and 404s the key — so **never pin publicPath to the npm data-package version**. Initial
+  install uses the library default (no override). `LIB_VERSION` in `backgroundRemoval.ts`
+  must track the installed `@imgly/background-removal` version.
 - **Consent gate:** `src/lib/backgroundRemoval.ts` persists consent + downloaded version in
   `localStorage` (`imacto.bgmodel.v1`). `BgRemovePanel` shows a consent card (local-processing
   explainer, size, ONNX/WASM details, repo link) with a progress-tracked **Download** button;
   controls + export stay gated until the model is ready.
-- **Versioning/update:** `fetchLatestModelVersion()` queries the npm registry; the panel
-  offers "Check for updates" / "Update" (re-pins `publicPath` to the newer data version).
-  Caveat: a newer data version isn't guaranteed compatible with the pinned library, so it's
-  an explicit opt-in, not a silent swap.
+- **Versioning/update:** `fetchLatestModelVersion()` queries the npm registry for the latest
+  **library** version (the value that determines the CDN model version). The panel offers
+  "Check for updates" / "Update"; Update re-pins `publicPath` to that newer library version's
+  CDN dir. Caveat: not guaranteed compatible with the installed library code, so it's an
+  explicit opt-in, never used for the initial install.
 - **Export:** `exportBackgroundRemoval` runs the cutout, composites onto the chosen
   background (transparent keeps alpha), encodes PNG/WebP, downloads `-nobg`. Branched in
   `handleExport`; `StudioContext` exposes `bgModel` / `downloadBgModel` / `forgetBgModel`.
