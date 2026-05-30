@@ -39,6 +39,7 @@ Trim & clip, format conversion, and video compression are stubbed in the UI and 
 | Icons | [Tabler Icons](https://tabler.io/icons) (webfont) |
 | Styling | Custom CSS (`App.css`, `index.css`) |
 | Linting | ESLint 10 with React Hooks and React Refresh plugins |
+| Testing | [Vitest](https://vitest.dev/) (unit tests for `src/lib` pure functions) |
 
 ## Getting started
 
@@ -59,18 +60,41 @@ npm run preview
 
 # Lint
 npm run lint
+
+# Run unit tests
+npm test
 ```
 
 Open the URL Vite prints (usually `http://localhost:5173`) to use the studio.
 
 ## Project layout
 
+The studio UI is split into focused modules rather than living in a single file:
+
 ```
 src/
-  App.jsx      # Main studio UI (sidebar, canvas, tool panels)
-  App.css      # Studio layout and component styles
-  main.jsx     # React entry point
-  index.css    # Global tokens and base styles
+  main.jsx                    # React entry point
+  App.jsx                     # Router shell ("/" → "/crop", "/:toolId")
+  App.css                     # Studio layout and component styles
+  index.css                   # Global tokens and base styles
+  context/
+    StudioContext.jsx         # Single source of truth for studio state + actions
+  pages/
+    StudioPage.jsx            # Top-level layout; resolves the active tool from the URL
+  constants/
+    tools.js                  # Tool registry, metadata, and default tool state
+  lib/                        # Framework-agnostic logic (pure where possible)
+    imageUpload.js            # File validation + load (25 MB cap)
+    imageExport.js            # Canvas crop/resize/compress/encode/download
+    cropGeometry.js           # Aspect math, region clamping, display↔source mapping
+    estimate.js               # Output size estimation
+    utils.js                  # cn() classname helper
+  components/
+    layout/                   # Sidebar, TopBar, StageBar, NavItem
+    canvas/                   # Canvas, Preview, CropOverlay, DropZone
+    panels/                   # One settings panel per tool
+    common/                   # Shared widgets (sliders, chips, estimate row, ...)
+    ui/                        # shadcn-style primitives (button, select, slider, ...)
 ```
 
 ## Roadmap (high level)
