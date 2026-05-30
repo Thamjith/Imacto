@@ -1,6 +1,6 @@
 const MAX_BYTES = 25 * 1024 * 1024
 
-const ACCEPTED_MIME = new Set([
+const ACCEPTED_MIME = new Set<string>([
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -11,7 +11,7 @@ const ACCEPTED_MIME = new Set([
   "image/svg+xml",
 ])
 
-const EXT_TO_MIME = {
+const EXT_TO_MIME: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
   png: "image/png",
@@ -24,34 +24,64 @@ const EXT_TO_MIME = {
   svg: "image/svg+xml",
 }
 
-export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp,image/tiff,image/svg+xml,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp,.tiff,.tif,.svg"
+export const IMAGE_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp,image/tiff,image/svg+xml,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp,.tiff,.tif,.svg"
 
-export function formatFileSize(bytes) {
+export interface LoadedImage {
+  file: File
+  objectUrl: string
+  width: number
+  height: number
+  name: string
+  size: number
+  sizeLabel: string
+  formatLabel: string
+  mimeType: string
+}
+
+export interface ValidationResult {
+  ok: boolean
+  error?: string
+}
+
+export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function formatLabelFromFile(file) {
+export function formatLabelFromFile(file: File): string {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
-  const map = { jpg: "JPG", jpeg: "JPG", png: "PNG", webp: "WEBP", avif: "AVIF", gif: "GIF", bmp: "BMP", tiff: "TIFF", tif: "TIFF", svg: "SVG" }
+  const map: Record<string, string> = {
+    jpg: "JPG",
+    jpeg: "JPG",
+    png: "PNG",
+    webp: "WEBP",
+    avif: "AVIF",
+    gif: "GIF",
+    bmp: "BMP",
+    tiff: "TIFF",
+    tif: "TIFF",
+    svg: "SVG",
+  }
   return (map[ext] ?? ext.toUpperCase()) || "IMG"
 }
 
-function mimeFromFile(file) {
+function mimeFromFile(file: File): string | null {
   if (file.type && ACCEPTED_MIME.has(file.type)) return file.type
   const ext = file.name.split(".").pop()?.toLowerCase()
-  return ext ? EXT_TO_MIME[ext] : null
+  return ext ? (EXT_TO_MIME[ext] ?? null) : null
 }
 
-export function validateImageFile(file) {
+export function validateImageFile(file: File | null | undefined): ValidationResult {
   if (!file) return { ok: false, error: "No file selected." }
-  if (!mimeFromFile(file)) return { ok: false, error: "Unsupported format. Use JPG, PNG, WebP, AVIF, GIF, BMP, TIFF, or SVG." }
+  if (!mimeFromFile(file))
+    return { ok: false, error: "Unsupported format. Use JPG, PNG, WebP, AVIF, GIF, BMP, TIFF, or SVG." }
   if (file.size > MAX_BYTES) return { ok: false, error: "File exceeds 25 MB limit." }
   return { ok: true }
 }
 
-export function loadImageFromFile(file) {
+export function loadImageFromFile(file: File): Promise<LoadedImage> {
   const validation = validateImageFile(file)
   if (!validation.ok) return Promise.reject(new Error(validation.error))
 
@@ -70,7 +100,7 @@ export function loadImageFromFile(file) {
         size: file.size,
         sizeLabel: formatFileSize(file.size),
         formatLabel: formatLabelFromFile(file),
-        mimeType: file.type || mimeFromFile(file),
+        mimeType: file.type || mimeFromFile(file) || "",
       })
     }
 
@@ -83,6 +113,6 @@ export function loadImageFromFile(file) {
   })
 }
 
-export function revokeImageUrl(objectUrl) {
+export function revokeImageUrl(objectUrl?: string | null): void {
   if (objectUrl) URL.revokeObjectURL(objectUrl)
 }

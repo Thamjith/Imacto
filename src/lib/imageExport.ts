@@ -1,7 +1,38 @@
-import { clampCropRegion, parseDimension } from "@/lib/cropGeometry"
-import { formatFileSize } from "@/lib/imageUpload"
+import { clampCropRegion, parseDimension, type Box } from "@/lib/cropGeometry"
+import { formatFileSize, type LoadedImage } from "@/lib/imageUpload"
 
-const FORMAT_META = {
+interface FormatMeta {
+  mime: string
+  ext: string
+}
+
+interface EncodedBlob {
+  blob: Blob
+  mime: string
+  ext: string
+}
+
+export interface ExportResult {
+  filename: string
+  size: number
+  sizeLabel: string
+  width: number
+  height: number
+}
+
+export interface CropState {
+  region?: Box
+  width?: number | string
+  height?: number | string
+  format?: string
+  quality?: number
+}
+
+export interface CompressState {
+  quality?: number
+}
+
+const FORMAT_META: Record<string, FormatMeta> = {
   jpg: { mime: "image/jpeg", ext: "jpg" },
   jpeg: { mime: "image/jpeg", ext: "jpg" },
   png: { mime: "image/png", ext: "png" },
@@ -12,7 +43,7 @@ const FORMAT_META = {
   tiff: { mime: "image/png", ext: "png" },
 }
 
-function loadImageElement(src) {
+function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
@@ -21,7 +52,7 @@ function loadImageElement(src) {
   })
 }
 
-function mimeFromImage(image) {
+function mimeFromImage(image: LoadedImage): FormatMeta {
   const mime = image.mimeType || "image/jpeg"
   if (mime === "image/svg+xml") return { mime: "image/png", ext: "png" }
   const part = mime.split("/")[1] ?? "jpeg"
@@ -29,16 +60,16 @@ function mimeFromImage(image) {
   return { mime, ext }
 }
 
-export function resolveOutputFormat(format, image) {
+export function resolveOutputFormat(format: string | undefined, image: LoadedImage): FormatMeta {
   if (format === "keep" || !format) return mimeFromImage(image)
   return FORMAT_META[format] ?? mimeFromImage(image)
 }
 
-function canvasToBlob(canvas, mime, quality) {
+function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality?: number): Promise<EncodedBlob> {
   const types = mime === "image/avif" ? ["image/avif", "image/webp", "image/png"] : [mime]
 
   return new Promise((resolve, reject) => {
-    const attempt = (index) => {
+    const attempt = (index: number) => {
       const type = types[index]
       if (!type) {
         reject(new Error("Export failed: format not supported in this browser."))
@@ -68,12 +99,12 @@ function canvasToBlob(canvas, mime, quality) {
   })
 }
 
-function buildFilename(originalName, ext, suffix = "cropped") {
+function buildFilename(originalName: string, ext: string, suffix = "cropped"): string {
   const base = originalName.replace(/\.[^.]+$/, "") || "imacto-export"
   return `${base}-${suffix}.${ext}`
 }
 
-export function triggerDownload(blob, filename) {
+export function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement("a")
   anchor.href = url
@@ -85,7 +116,7 @@ export function triggerDownload(blob, filename) {
 /**
  * Crop source region and scale to output dimensions, then encode.
  */
-export async function exportCropResize(image, cropState) {
+export async function exportCropResize(image: LoadedImage, cropState: CropState): Promise<ExportResult> {
   const img = await loadImageElement(image.objectUrl)
   const region = clampCropRegion(
     cropState.region ?? { x: 0, y: 0, width: image.width, height: image.height },
@@ -127,7 +158,7 @@ export async function exportCropResize(image, cropState) {
  * Quality applies to lossy formats (JPEG/WebP/AVIF). Lossless PNG keeps its
  * format but is re-encoded through the canvas, which also strips EXIF metadata.
  */
-export async function exportCompress(image, compressState) {
+export async function exportCompress(image: LoadedImage, compressState: CompressState): Promise<ExportResult> {
   const img = await loadImageElement(image.objectUrl)
 
   const canvas = document.createElement("canvas")
