@@ -1,34 +1,96 @@
-import { useEffect, useState } from "react"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useMemo, useState } from "react"
 
 function formatMb(bytes) {
-  return `${(bytes / 1048576).toFixed(0)} MB`
+  return Math.round(bytes / 1048576)
+}
+
+/** One-time WebGL probe for the GPU renderer name. Releases the context immediately. */
+function probeGpu() {
+  try {
+    const canvas = document.createElement("canvas")
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
+    if (!gl) return null
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info")
+    const raw = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : null
+    gl.getExtension("WEBGL_lose_context")?.loseContext()
+    if (!raw) return null
+    // "ANGLE (Apple, ANGLE Metal Renderer: Apple M1, ...)" -> "Apple M1"
+    const angle = raw.match(/ANGLE \(([^)]*)\)/)
+    const inner = angle ? angle[1] : raw
+    const model = inner
+      .split(",")
+      .map((s) => s.replace(/.*Renderer:\s*/, "").trim())
+      .filter(Boolean)
+      .pop()
+    return { label: model || inner.trim(), full: raw }
+  } catch {
+    return null
+  }
+}
+
+function StatPill({ label, value, title, className }) {
+  return (
+    <span className={`heap-meter${className ? ` ${className}` : ""}`} title={title}>
+      <span className="k">{label}</span>
+      <span className="v">{value}</span>
+    </span>
+  )
 }
 
 /**
- * Polls the JS heap size when available (Chromium-only `performance.memory`).
- * This is the JavaScript heap only — it does not account for GPU/canvas memory,
- * so treat it as a rough indicator while brushing large images.
+ * Top-right system monitor. Shows only values browsers actually expose — there is
+ * no Web API for true CPU%/GPU% usage. Each pill renders only when its API is
+ * available, so non-Chromium browsers degrade to fewer (or no) pills.
+ *
+ * - JS heap (Chromium `performance.memory`): the JavaScript heap only — it does
+ *   NOT include GPU/canvas memory, so treat it as a rough indicator.
+ * - Device RAM (`navigator.deviceMemory`): approximate, coarse, capped at 8 GB.
+ * - GPU: renderer name via WebGL debug info (no utilization is available).
  */
-function HeapMeter() {
-  const [used, setUsed] = useState(null)
+function SystemMonitor() {
+  const [heap, setHeap] = useState(null)
 
   useEffect(() => {
     const mem = performance.memory
     if (!mem) return undefined
-    const tick = () => setUsed(performance.memory.usedJSHeapSize)
+    const tick = () =>
+      setHeap({
+        used: performance.memory.usedJSHeapSize,
+        limit: performance.memory.jsHeapSizeLimit,
+      })
     tick()
     const id = setInterval(tick, 1500)
     return () => clearInterval(id)
   }, [])
 
-  if (used == null) return null
+  const deviceMemory = useMemo(
+    () => (typeof navigator !== "undefined" ? navigator.deviceMemory : undefined),
+    []
+  )
+  const gpu = useMemo(() => probeGpu(), [])
+
+  if (!heap && deviceMemory == null && !gpu) return null
 
   return (
-    <span className="heap-meter" title="JS heap (Chromium only — excludes GPU/canvas memory)">
-      <i className="ti ti-cpu" />
-      {formatMb(used)}
-    </span>
+    <div className="sys-monitor">
+      {heap ? (
+        <StatPill
+          label="JS"
+          value={`${formatMb(heap.used)} / ${formatMb(heap.limit)} MB`}
+          title="JavaScript heap used / limit (Chromium only — excludes GPU & canvas memory)"
+        />
+      ) : null}
+      {deviceMemory != null ? (
+        <StatPill
+          label="RAM"
+          value={`${deviceMemory} GB`}
+          title="Approximate device memory (coarse, capped at 8 GB)"
+        />
+      ) : null}
+      {gpu ? (
+        <StatPill label="GPU" value={gpu.label} title={gpu.full} className="stat-pill-gpu" />
+      ) : null}
+    </div>
   )
 }
 
@@ -46,12 +108,7 @@ export function TopBar() {
         <span className="sub">studio</span>
       </div>
       <div className="topbar-right">
-        <HeapMeter />
-        <Badge variant="secondary" className="badge-muted h-6 gap-1.5 rounded-full px-2.5 font-normal">
-          <span className="dot" />
-          Image only · video coming soon
-        </Badge>
-        <div className="avatar">RM</div>
+        <SystemMonitor />
       </div>
     </header>
   )

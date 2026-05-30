@@ -59,6 +59,7 @@
 .brand .sub { color: var(--color-text-tertiary); margin-left: 1px; }
 
 .topbar-right { display: flex; align-items: center; gap: 12px; }
+.sys-monitor { display: inline-flex; align-items: center; gap: 6px; }
 .heap-meter {
   display: inline-flex;
   align-items: center;
@@ -68,9 +69,22 @@
   border-radius: 999px;
   background: var(--color-background-secondary);
   border: 0.5px solid var(--color-border-tertiary);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.heap-meter .k {
+  color: var(--color-text-tertiary);
+  font-variant-numeric: normal;
+  letter-spacing: 0.02em;
+}
+.heap-meter .v { min-width: 0; }
+.stat-pill-gpu .v {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .badge-muted {
   height: 24px;
