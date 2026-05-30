@@ -22,12 +22,18 @@ uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and to
 
 ## State of the tools
 
-- **Real & working:** Crop & resize, Compress, Convert format — all export via the Canvas
-  pipeline and download locally.
-- **Stubbed / `soon` (disabled in sidebar, routes redirect to `/crop`):** Rotate & flip,
-  Background remove, Watermark. Panels and default state exist but are unreachable from
-  the UI.
+- **Real & working:** Crop & resize, Compress, Convert format, Rotate & flip — all export
+  via the Canvas pipeline and download locally.
+- **Stubbed / `soon` (disabled in sidebar, routes redirect to `/crop`):** Background remove,
+  Watermark. Panels and default state exist but are unreachable from the UI.
 - **Video tools:** UI placeholders only — coming soon.
+
+### Rotate & flip (enabled 2026-05-30)
+- `exportRotateFlip` in `src/lib/imageExport.ts`: arbitrary-angle rotation + H/V flip,
+  output canvas sized to the rotated bounding box (no clipping), non-alpha targets flattened
+  onto a background, `-rotated` filename suffix. Branched in `handleExport` (`StudioContext`).
+- Live preview already worked (CSS transform wired through `StudioPage` → `Canvas` →
+  `Preview`); enabling only required removing `soon` from the `rotate` entry in `tools.js`.
 
 ## Active decisions & considerations
 

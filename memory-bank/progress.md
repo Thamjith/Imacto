@@ -18,6 +18,10 @@ _Last updated: 2026-05-30 (Convert format enabled)_
 - **Convert format tool:** target-format select (WebP/AVIF/PNG/JPG; GIF/BMP/TIFF→PNG),
   background flatten for non-alpha targets, high-quality re-encode, real Canvas export →
   local download (`-converted` suffix). Color profile is a UI-only selection.
+- **Rotate & flip tool:** arbitrary-angle rotation (90° steps + fine-angle slider) and
+  horizontal/vertical flip, live CSS-transform preview, real Canvas export sized to the
+  rotated bounding box (no corner clipping), non-alpha targets flattened onto a background,
+  → local download (`-rotated` suffix).
 - **Output size estimation** (`src/lib/estimate.js`), using real file size when available.
 - **Sidebar** with image tools + "coming soon" gating for WIP tools and video tools.
 - **Unit tests** for pure libs (`cropGeometry`, `estimate`) via Vitest.
@@ -28,7 +32,6 @@ _Last updated: 2026-05-30 (Convert format enabled)_
   add `tsconfig.json`, and type the context/registry/lib surfaces.
 - **Rust + WebAssembly pipeline** — toolchain + first WASM module for heavy media
   processing (introduced when the first heavy need appears; runs client-side in a Worker).
-- **Rotate & flip** applied on export (currently preview-transform only).
 - **Background remove** (subject isolation) — stubbed.
 - **Watermark** rendering — stubbed.
 - **Video tools** (trim, convert, compress) — UI placeholders only.
@@ -38,9 +41,10 @@ _Last updated: 2026-05-30 (Convert format enabled)_
 
 ## Current status
 
-Early but functional. Three image tools (Crop & resize, Compress, Convert format) are
-production-real and export locally. The remaining image tools and all video tools are UI
-stubs disabled behind "coming soon". Memory bank initialized on 2026-05-30.
+Early but functional. Four image tools (Crop & resize, Compress, Convert format, Rotate &
+flip) are production-real and export locally. The remaining image tools (Background remove,
+Watermark) and all video tools are UI stubs disabled behind "coming soon". Memory bank
+initialized on 2026-05-30.
 
 **Architectural direction (2026-05-30):** the project will move to **TypeScript**
 everywhere, and heavy image/video processing beyond plain JS/Canvas will be implemented in
@@ -50,6 +54,7 @@ everywhere, and heavy image/video processing beyond plain JS/Canvas will be impl
 
 - Canvas can't encode GIF/BMP/TIFF (fall back to PNG); AVIF falls back WebP → PNG; SVG
   rasterizes to PNG on export.
-- Rotate/flip not applied during export.
+- Rotate & flip exports independently of crop (no combined rotate-then-crop pipeline yet);
+  the in-canvas preview rotates via CSS transform only.
 - No in-place edit commit — workflow is export-only.
 - No license specified yet (see README).

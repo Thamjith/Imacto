@@ -12,6 +12,14 @@ interface EncodedBlob {
   ext: string
 }
 
+export interface RotateState {
+  rotation?: number
+  flipH?: boolean
+  flipV?: boolean
+  format?: string
+  bg?: string
+}
+
 export interface ExportResult {
   filename: string
   size: number
@@ -239,5 +247,63 @@ export async function exportConvert(image: LoadedImage, convertState: ConvertSta
     sizeLabel: formatFileSize(blob.size),
     width: image.width,
     height: image.height,
+  }
+}
+
+/**
+ * Rotate the image by an arbitrary angle and/or flip it, then encode.
+ *
+ * The output canvas is sized to the rotated bounding box so corners are never
+ * clipped. Formats without an alpha channel (e.g. JPEG) are flattened onto a
+ * solid background because rotation by a non-right angle exposes transparent
+ * corners that would otherwise encode as black.
+ */
+export async function exportRotateFlip(image: LoadedImage, rotateState: RotateState): Promise<ExportResult> {
+  const img = await loadImageElement(image.objectUrl)
+
+  const angle = (((rotateState.rotation ?? 0) % 360) + 360) % 360
+  const rad = (angle * Math.PI) / 180
+  const flipH = rotateState.flipH ? -1 : 1
+  const flipV = rotateState.flipV ? -1 : 1
+
+  const w = image.width
+  const h = image.height
+  const cos = Math.abs(Math.cos(rad))
+  const sin = Math.abs(Math.sin(rad))
+  const outW = Math.max(1, Math.round(w * cos + h * sin))
+  const outH = Math.max(1, Math.round(w * sin + h * cos))
+
+  const canvas = document.createElement("canvas")
+  canvas.width = outW
+  canvas.height = outH
+  const ctx = canvas.getContext("2d")
+  if (!ctx) throw new Error("Canvas is not available.")
+
+  const { mime, ext: preferredExt } = resolveOutputFormat(rotateState.format, image)
+  const supportsAlpha = mime === "image/png" || mime === "image/webp" || mime === "image/avif"
+  if (!supportsAlpha) {
+    ctx.fillStyle = BG_FILL[rotateState.bg ?? "white"] ?? "#ffffff"
+    ctx.fillRect(0, 0, outW, outH)
+  }
+
+  // Move origin to the canvas center, then rotate and flip about it before
+  // drawing the (centered) source image.
+  ctx.translate(outW / 2, outH / 2)
+  ctx.rotate(rad)
+  ctx.scale(flipH, flipV)
+  ctx.drawImage(img, -w / 2, -h / 2, w, h)
+
+  const useQuality = mime === "image/jpeg" || mime === "image/webp" || mime === "image/avif"
+  const { blob, ext: encodedExt } = await canvasToBlob(canvas, mime, useQuality ? 0.92 : undefined)
+  const filename = buildFilename(image.name, encodedExt ?? preferredExt, "rotated")
+
+  triggerDownload(blob, filename)
+
+  return {
+    filename,
+    size: blob.size,
+    sizeLabel: formatFileSize(blob.size),
+    width: outW,
+    height: outH,
   }
 }
