@@ -21,20 +21,6 @@ export function StudioPage() {
   }, [tool, toolId, navigate])
 
   const bgRemoveActive = tool === "bgremove"
-  const { runBgPreview } = studio
-
-  useEffect(() => {
-    if (bgRemoveActive && studio.bgModel.downloaded && studio.loaded) {
-      runBgPreview()
-    }
-  }, [
-    bgRemoveActive,
-    studio.bgModel.downloaded,
-    studio.bgModel.variant,
-    studio.loaded,
-    studio.image?.objectUrl,
-    runBgPreview,
-  ])
 
   if (!tool) return <Navigate to="/crop" replace />
 

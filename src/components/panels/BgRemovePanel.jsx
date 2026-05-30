@@ -64,7 +64,7 @@ const BRUSH_MODES = [
 ]
 
 export function BgRemovePanel({ state, set }) {
-  const { bgModel, downloadBgModel, forgetBgModel, bgBrush } = useStudio()
+  const { bgModel, downloadBgModel, forgetBgModel, bgBrush, bgPreview, runBgPreview, image } = useStudio()
   const [latest, setLatest] = useState(null)
   const [phase, setPhase] = useState("idle")
   const [progress, setProgress] = useState(0)
@@ -113,6 +113,9 @@ export function BgRemovePanel({ state, set }) {
   const pct = Math.round(progress * 100)
   const updateAvailable = bgModel.downloaded && isNewer(latest, bgModel.version)
   const busy = phase === "downloading"
+  const processing = bgPreview?.status === "processing"
+  const hasResult = bgPreview?.status === "ready"
+  const runLabel = processing ? "Removing background…" : hasResult ? "Re-run removal" : "Remove background"
 
   if (!bgModel.downloaded) {
     return (
@@ -179,6 +182,24 @@ export function BgRemovePanel({ state, set }) {
 
   return (
     <>
+      <PanelSection label="background removal">
+        <Button
+          className="btn-primary w-full"
+          onClick={() => runBgPreview()}
+          disabled={!image || processing || busy}
+        >
+          {processing ? <i className="ti ti-loader-2 spin" /> : <i className="ti ti-wand" />}
+          {runLabel}
+        </Button>
+        <p className="mt-2 text-[10px] leading-tight text-[var(--color-text-tertiary)]">
+          {hasResult
+            ? "Runs on the active model. Re-run after switching model quality to update the result."
+            : "Runs the on-device model on the current image. Required before manual refine."}
+        </p>
+        {bgPreview?.status === "error" ? (
+          <p className="mt-1 text-[10px] text-[#f87171]">Removal failed. Try again.</p>
+        ) : null}
+      </PanelSection>
       <PanelSection label="replace with">
         <ColorSwatches value={state.bg} onChange={(bg) => set({ bg })} />
       </PanelSection>
@@ -204,8 +225,14 @@ export function BgRemovePanel({ state, set }) {
         <p className="mt-2 text-[10px] leading-tight text-[var(--color-text-tertiary)]">{EXTERNAL_NOTE}</p>
       </PanelSection>
       <PanelSection label="manual refine">
-        <ChipGroup options={BRUSH_MODES} value={state.brushMode} onChange={(brushMode) => set({ brushMode })} />
-        {state.brushMode !== "off" ? (
+        {bgBrush?.ready ? (
+          <ChipGroup options={BRUSH_MODES} value={state.brushMode} onChange={(brushMode) => set({ brushMode })} />
+        ) : (
+          <p className="text-[11px] text-[var(--color-text-tertiary)]">
+            Run “Remove background” first to enable brushing.
+          </p>
+        )}
+        {bgBrush?.ready && state.brushMode !== "off" ? (
           <div className="mt-3 flex flex-col gap-3">
             <SliderField
               label="Brush size"

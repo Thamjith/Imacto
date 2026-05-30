@@ -34,7 +34,7 @@ export function StudioProvider({ children }) {
   const [exporting, setExporting] = useState(false)
   const [bgModel, setBgModel] = useState(() => getModelStatus())
   const [bgPreview, setBgPreview] = useState({ status: "idle", url: null })
-  const bgPreviewKeyRef = useRef(null)
+  const bgRunIdRef = useRef(0)
   const bgPreviewUrlRef = useRef(null)
   const bgBrush = useBgBrush()
 
@@ -50,7 +50,7 @@ export function StudioProvider({ children }) {
   }, [])
 
   const resetBgPreview = useCallback(() => {
-    bgPreviewKeyRef.current = null
+    bgRunIdRef.current += 1
     if (bgPreviewUrlRef.current) {
       URL.revokeObjectURL(bgPreviewUrlRef.current)
       bgPreviewUrlRef.current = null
@@ -58,12 +58,12 @@ export function StudioProvider({ children }) {
     setBgPreview({ status: "idle", url: null })
   }, [])
 
+  // Explicit, user-triggered background removal. Re-runnable on demand (e.g. to
+  // re-run with the same already-downloaded model); a run id invalidates any
+  // result that finishes after a newer run started or the image changed.
   const runBgPreview = useCallback(async () => {
-    const status = getModelStatus()
-    if (!image || !status.downloaded) return
-    const key = `${image.objectUrl}::${status.variant}`
-    if (bgPreviewKeyRef.current === key) return
-    bgPreviewKeyRef.current = key
+    if (!getModelStatus().downloaded || !image) return
+    const runId = ++bgRunIdRef.current
 
     if (bgPreviewUrlRef.current) {
       URL.revokeObjectURL(bgPreviewUrlRef.current)
@@ -72,15 +72,14 @@ export function StudioProvider({ children }) {
     setBgPreview({ status: "processing", url: null })
     try {
       const url = await previewBackgroundRemoval(image)
-      if (bgPreviewKeyRef.current !== key) {
+      if (bgRunIdRef.current !== runId) {
         URL.revokeObjectURL(url)
         return
       }
       bgPreviewUrlRef.current = url
       setBgPreview({ status: "ready", url })
     } catch {
-      if (bgPreviewKeyRef.current === key) bgPreviewKeyRef.current = null
-      setBgPreview({ status: "error", url: null })
+      if (bgRunIdRef.current === runId) setBgPreview({ status: "error", url: null })
     }
   }, [image])
 
@@ -207,9 +206,13 @@ export function StudioProvider({ children }) {
     }
   }, [image?.objectUrl])
 
-  // Drop any stale background-removal preview whenever the source image changes.
+  // Drop any stale background-removal preview/brush whenever the source image
+  // changes (removal is explicit now, so nothing re-runs automatically).
   useEffect(() => {
     resetBgPreview()
+    setToolState((s) =>
+      s.bgremove.brushMode === "off" ? s : { ...s, bgremove: { ...s.bgremove, brushMode: "off" } }
+    )
   }, [image?.objectUrl, resetBgPreview])
 
   // Seed the manual-brush work canvas from the model cutout once it's ready.
