@@ -1,6 +1,6 @@
 # Progress — Imacto Studio
 
-_Last updated: 2026-05-30_
+_Last updated: 2026-05-30 (Convert format enabled)_
 
 ## What works
 
@@ -15,6 +15,9 @@ _Last updated: 2026-05-30_
   export → local download (`-cropped` suffix).
 - **Compress tool:** presets, quality slider, EXIF stripping via re-encode, real Canvas
   export → local download (`-compressed` suffix).
+- **Convert format tool:** target-format select (WebP/AVIF/PNG/JPG; GIF/BMP/TIFF→PNG),
+  background flatten for non-alpha targets, high-quality re-encode, real Canvas export →
+  local download (`-converted` suffix). Color profile is a UI-only selection.
 - **Output size estimation** (`src/lib/estimate.js`), using real file size when available.
 - **Sidebar** with image tools + "coming soon" gating for WIP tools and video tools.
 - **Unit tests** for pure libs (`cropGeometry`, `estimate`) via Vitest.
@@ -25,7 +28,6 @@ _Last updated: 2026-05-30_
   add `tsconfig.json`, and type the context/registry/lib surfaces.
 - **Rust + WebAssembly pipeline** — toolchain + first WASM module for heavy media
   processing (introduced when the first heavy need appears; runs client-side in a Worker).
-- **Convert format** export (panel exists, currently `soon`/disabled).
 - **Rotate & flip** applied on export (currently preview-transform only).
 - **Background remove** (subject isolation) — stubbed.
 - **Watermark** rendering — stubbed.
@@ -36,9 +38,9 @@ _Last updated: 2026-05-30_
 
 ## Current status
 
-Early but functional. Two image tools (Crop & resize, Compress) are production-real and
-export locally. The remaining image tools and all video tools are UI stubs disabled behind
-"coming soon". Memory bank initialized on 2026-05-30.
+Early but functional. Three image tools (Crop & resize, Compress, Convert format) are
+production-real and export locally. The remaining image tools and all video tools are UI
+stubs disabled behind "coming soon". Memory bank initialized on 2026-05-30.
 
 **Architectural direction (2026-05-30):** the project will move to **TypeScript**
 everywhere, and heavy image/video processing beyond plain JS/Canvas will be implemented in

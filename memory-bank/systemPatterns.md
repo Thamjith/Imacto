@@ -57,8 +57,8 @@ src/
   `{ file, objectUrl, width, height, name, size, sizeLabel, formatLabel, mimeType }`.
   Always `revokeImageUrl` old object URLs when replacing the image.
 - `toolState` is keyed by tool id, seeded from `DEFAULT_TOOL_STATE`.
-- `handleExport` runs the **real** Canvas pipeline for `crop` and `compress`; other tools
-  fall back to a queued-toast stub (and are currently unreachable in the UI anyway).
+- `handleExport` runs the **real** Canvas pipeline for `crop`, `compress`, and `convert`;
+  other tools fall back to a queued-toast stub (and are currently unreachable in the UI).
 
 ## Tool registry (`constants/tools.js`)
 

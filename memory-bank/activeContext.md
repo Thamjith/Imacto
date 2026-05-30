@@ -1,15 +1,19 @@
 # Active Context — Imacto Studio
 
-_Last updated: 2026-05-30_
+_Last updated: 2026-05-30 (Convert format enabled)_
 
 ## Current work focus
 
-Memory bank just initialized. No active feature work in progress in this session beyond
-documentation. Repo has uncommitted changes to `README.md`, `package.json`,
-`package-lock.json`, plus new `.cursorignore` and `.vscode/extensions.json`.
+Enabled and implemented the **Convert format** tool (real Canvas-based re-encode). The
+TypeScript migration of `src/lib` is also in progress (libs are now `.ts`). Repo has
+uncommitted changes across `src/lib/*`, `package.json`, `tsconfig*.json`, and tool wiring.
 
 ## Recent changes (from git + handoff)
 
+- **Convert format enabled** — removed `soon` gating; added `exportConvert` in
+  `src/lib/imageExport.ts` (full-res re-encode, background flatten for non-alpha formats,
+  high-quality lossy encode), branched `handleExport` on `convert`, and wired real
+  source/estimate into `ConvertPanel`. Color profile is UI-only (Canvas encodes sRGB).
 - `835a2eb` — Added core coding conventions + session handoff docs.
 - `f2e0b48` — Disabled WIP tools (`soon` gating) and implemented real **Compress** export.
 - `e03440c` — Added **Crop & resize** functionality.
@@ -18,11 +22,11 @@ documentation. Repo has uncommitted changes to `README.md`, `package.json`,
 
 ## State of the tools
 
-- **Real & working:** Crop & resize, Compress — both export via the Canvas pipeline and
-  download locally.
-- **Stubbed / `soon` (disabled in sidebar, routes redirect to `/crop`):** Convert,
-  Rotate & flip, Background remove, Watermark. Panels and default state exist but are
-  unreachable from the UI.
+- **Real & working:** Crop & resize, Compress, Convert format — all export via the Canvas
+  pipeline and download locally.
+- **Stubbed / `soon` (disabled in sidebar, routes redirect to `/crop`):** Rotate & flip,
+  Background remove, Watermark. Panels and default state exist but are unreachable from
+  the UI.
 - **Video tools:** UI placeholders only — coming soon.
 
 ## Active decisions & considerations
@@ -43,10 +47,10 @@ documentation. Repo has uncommitted changes to `README.md`, `package.json`,
 2. **Stand up the Rust→WASM toolchain** (e.g. `wasm-pack`/`wasm-bindgen` + Vite + Web
    Worker) the first time a heavy processing need appears.
 3. Apply **rotate/flip** in the export pipeline (shared `renderImage` helper) before crop.
-4. Wire **Convert** export using the same Canvas pipeline, then enable the tool.
-5. Optional **Apply** action to replace `image` in state after crop (toward an undo stack).
-6. Expand unit tests around `cropGeometry` and export format resolution.
-7. Consider edge handles (currently corners only) and min-crop-size UX.
+4. Optional **Apply** action to replace `image` in state after crop (toward an undo stack).
+5. Expand unit tests around `cropGeometry`, export format resolution, and `exportConvert`.
+6. Consider edge handles (currently corners only) and min-crop-size UX.
+7. Real color-profile handling for Convert would need a WASM encoder (Canvas is sRGB-only).
 
 ## Notes
 
